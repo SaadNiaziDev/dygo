@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { ErrorState, Spinner } from '@/design'
 import { storeError } from '@/stores/status'
-import { pageRenderer } from './page-renderers'
+import { resolvePageRenderer } from './page-renderers'
 import { usePageQuery } from './pages.query'
 
 const props = defineProps<{
@@ -14,7 +14,7 @@ const props = defineProps<{
 const pageQuery = usePageQuery(() => props.app, () => props.pageKey)
 const page = computed(() => pageQuery.data.value ?? null)
 const loading = computed(() => pageQuery.isPending.value)
-const renderer = computed(() => page.value ? pageRenderer(page.value.renderer) : null)
+const renderer = computed(() => page.value ? resolvePageRenderer(page.value) : null)
 const error = computed(() => pageQuery.error.value
   ? storeError(pageQuery.error.value, 'Studio could not load this Page.')
   : null)

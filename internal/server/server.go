@@ -521,9 +521,11 @@ type bootHandler struct {
 }
 
 type pageClaim struct {
-	App  string `json:"app"`
-	Key  string `json:"key"`
-	Path string `json:"path"`
+	App   string `json:"app"`
+	Key   string `json:"key"`
+	Path  string `json:"path"`
+	Label string `json:"label,omitempty"`
+	Icon  string `json:"icon,omitempty"`
 }
 
 func registerBootRoutes(router chi.Router, store RecordStore, pages PageStore, checker PermissionChecker) {
@@ -553,7 +555,7 @@ func (h bootHandler) boot(w http.ResponseWriter, r *http.Request) {
 	}
 	claims := make([]pageClaim, 0, len(pages))
 	for _, page := range pages {
-		claims = append(claims, pageClaim{App: page.App.Name, Key: page.Key, Path: page.Path})
+		claims = append(claims, pageClaim{App: page.App.Name, Key: page.Key, Path: page.Path, Label: page.Label, Icon: page.Icon})
 	}
 
 	home, err := h.homeDefault(r.Context())

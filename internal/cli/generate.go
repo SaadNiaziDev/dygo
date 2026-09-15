@@ -20,6 +20,7 @@ func newGenerateCommand(stdout io.Writer) *cobra.Command {
 	cmd.AddCommand(newGenerateCollectionCommand(stdout))
 	cmd.AddCommand(newGenerateHookCommand(stdout))
 	cmd.AddCommand(newGenerateJobCommand(stdout))
+	cmd.AddCommand(newGeneratePageCommand(stdout))
 	cmd.AddCommand(newGenerateFixtureCommand(stdout))
 	cmd.AddCommand(newGenerateTestCommand(stdout))
 
@@ -192,6 +193,39 @@ func newGenerateJobCommand(stdout io.Writer) *cobra.Command {
 		},
 	}
 	addScaffoldWriteFlags(cmd, &dryRun, &force)
+	return cmd
+}
+
+func newGeneratePageCommand(stdout io.Writer) *cobra.Command {
+	var dryRun bool
+	var force bool
+	var noAccess bool
+
+	cmd := &cobra.Command{
+		Use:   "page <app>/<page>",
+		Short: "Generate a Page bundle with YAML metadata and a Vue starter",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			target, err := shape.ParseAppRef(args[0])
+			if err != nil {
+				return err
+			}
+			root, err := workingRootPath()
+			if err != nil {
+				return err
+			}
+			if err := requireGenerateApp(root, target.App); err != nil {
+				return err
+			}
+			plan, err := scaffold.Page(scaffold.Options{Root: root, DryRun: dryRun, Force: force, NoAccess: noAccess}, target)
+			if err != nil {
+				return fmt.Errorf("generate page: %w", err)
+			}
+			return writeGeneratePlan(stdout, "generated page "+args[0], plan)
+		},
+	}
+	addScaffoldWriteFlags(cmd, &dryRun, &force)
+	cmd.Flags().BoolVar(&noAccess, "no-access", false, "skip access metadata skeleton creation")
 	return cmd
 }
 

@@ -3,5 +3,5 @@ description: Start page for the entities available to the current Studio user.
 icon: house
 route:
   path: /
-renderer: entity-index
+renderer: vue
 options: {}

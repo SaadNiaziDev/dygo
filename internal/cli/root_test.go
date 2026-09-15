@@ -165,6 +165,7 @@ func TestCommandSurfaceRegistersTargetCommands(t *testing.T) {
 		{"generate", "collection"},
 		{"generate", "hook"},
 		{"generate", "job"},
+		{"generate", "page"},
 		{"generate", "fixture"},
 		{"generate", "test"},
 		{"g"},

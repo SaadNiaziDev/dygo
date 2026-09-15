@@ -215,7 +215,6 @@ function displayValue(record: RecordData, displayField?: string): string {
             v-if="modelValue"
             label="Open related record"
             variant="ghost"
-            :disabled="disabled"
             @click="emit('open-related', modelValue)"
           >
             <ExternalLink :size="14" stroke-width="1.8" aria-hidden="true" />

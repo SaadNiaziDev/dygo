@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import {
   Activity,
+  ArrowUpRight,
   Box,
   Boxes,
   BriefcaseBusiness,
@@ -12,8 +13,10 @@ import {
   Flag,
   GitPullRequestArrow,
   Hash,
+  House,
   KeyRound,
   Languages,
+  LayoutDashboard,
   ListChecks,
   ListTree,
   Package,
@@ -26,6 +29,7 @@ import {
 
 const entityIconRegistry: Record<string, Component> = {
   activity: Activity,
+  'arrow-up-right': ArrowUpRight,
   box: Box,
   boxes: Boxes,
   'briefcase-business': BriefcaseBusiness,
@@ -37,8 +41,10 @@ const entityIconRegistry: Record<string, Component> = {
   flag: Flag,
   'git-pull-request-arrow': GitPullRequestArrow,
   hash: Hash,
+  house: House,
   'key-round': KeyRound,
   languages: Languages,
+  'layout-dashboard': LayoutDashboard,
   'list-checks': ListChecks,
   'list-tree': ListTree,
   package: Package,

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { usePageCommands, runStudioCommand } from '@/features/commands/context'
 import { bindings } from '@/features/commands/shortcuts'
 import { useDraftGuard } from '@/features/records/use-draft-guard'
-import { Ban, Play, Plus, RotateCcw, Save, Trash2 } from '@lucide/vue'
+import { Ban, ExternalLink, Play, Plus, RotateCcw, Save, Trash2 } from '@lucide/vue'
 
 import { queryClient } from '@/app/query'
 import { ErrorState, Spinner } from '@/design'
@@ -36,7 +36,7 @@ import type { RecordData } from '@/features/records/records.api'
 import { secretSubmitValue } from '@/features/records/secret-input'
 import { isHiddenCollectionField, isHiddenRecordSubmitField, recordFieldLabel } from '@/features/records/system-fields'
 import { RecordFormRenderer, RecordTimeline } from '@/renderers/records'
-import { RouteName } from '@/router/routes'
+import { normalizePageClaimPath, RouteName } from '@/router/routes'
 import PageHeader from '@/shell/PageHeader.vue'
 import type { PageHeaderAction } from '@/shell/types'
 import { humanizeEntity } from '@/stores/metadata.identity'
@@ -214,6 +214,10 @@ const pinTarget = computed<PinnedItem | null>(() => {
   }
 })
 const isSystem = computed(() => entityMeta.value?.['is-system'] === true)
+const pageOpenPath = computed(() => {
+  if (entityMeta.value?.key !== 'page' || isNew.value) return null
+  return normalizePageClaimPath(record.value?.path)
+})
 const loading = computed(() => (
   entityMetaStatus.value === 'idle'
   || entityMetaStatus.value === 'loading'
@@ -240,6 +244,16 @@ usePageCommands(computed(() => [
 const entityActions = computed(() => recordEntityActions(entityMeta.value?.actions))
 const actions = computed<PageHeaderAction[]>(() => {
   const next: PageHeaderAction[] = []
+  if (pageOpenPath.value) {
+    const path = pageOpenPath.value
+    next.push({
+      label: 'Open Page',
+      icon: ExternalLink,
+      variant: 'secondary',
+      disabled: loading.value,
+      onSelect: () => { void router.push(path) },
+    })
+  }
   if (!isSystem.value) {
     next.push(
       {

@@ -39,10 +39,11 @@ type Action struct {
 }
 
 type fileSpec struct {
-	Path     string
-	Mode     os.FileMode
-	Template string
-	Data     templateData
+	Path       string
+	Mode       os.FileMode
+	Template   string
+	Data       templateData
+	CreateOnly bool
 }
 
 type templateData struct {
@@ -116,6 +117,39 @@ func Fixture(options Options, ref shape.AppRef) (Plan, error) {
 	return writeScaffold(options, nil, []fileSpec{fixtureSpec(ref)})
 }
 
+// Page generates Page metadata, a Vue starter, and optional access policy.
+func Page(options Options, ref shape.AppRef) (Plan, error) {
+	if err := shape.ValidateMetadataName("page", ref.Name); err != nil {
+		return Plan{}, err
+	}
+	data := templateData{App: ref.App, Name: ref.Name, Label: labelForName(ref.Name)}
+	files := []fileSpec{
+		{
+			Path:     filepath.ToSlash(filepath.Join(shape.AppDir(ref.App), shape.PageMetadataPath(ref.Name))),
+			Mode:     0o644,
+			Template: "page.yml.tmpl",
+			Data:     data,
+		},
+	}
+	if !options.NoAccess {
+		files = append(files, fileSpec{
+			Path:     shape.AppPageAccessPath(ref.App, ref.Name),
+			Mode:     0o644,
+			Template: "page.access.yml.tmpl",
+			Data:     data,
+		})
+	}
+	pageDir := filepath.ToSlash(filepath.Join(shape.AppDir(ref.App), shape.AppPagesDir, ref.Name))
+	files = append(files, fileSpec{
+		Path:       filepath.ToSlash(filepath.Join(shape.AppDir(ref.App), shape.PageViewPath(ref.Name))),
+		Mode:       0o644,
+		Template:   "page.vue.tmpl",
+		Data:       data,
+		CreateOnly: true,
+	})
+	return writeScaffold(options, []string{pageDir}, files)
+}
+
 // Test generates Go test boilerplate for an Entity bundle.
 func Test(options Options, ref shape.AppRef) (Plan, error) {
 	return writeScaffold(options, nil, []fileSpec{testSpec(ref)})
@@ -156,7 +190,7 @@ func writeScaffold(options Options, dirs []string, files []fileSpec) (Plan, erro
 		if err != nil {
 			return Plan{}, err
 		}
-		status, err := planFile(root, spec.Path, source, options)
+		status, err := planFile(root, spec, source, options)
 		if err != nil {
 			return Plan{}, err
 		}
@@ -182,8 +216,8 @@ func writeScaffold(options Options, dirs []string, files []fileSpec) (Plan, erro
 	return plan, nil
 }
 
-func planFile(root string, path string, source []byte, options Options) (string, error) {
-	target := filepath.Join(root, filepath.FromSlash(path))
+func planFile(root string, spec fileSpec, source []byte, options Options) (string, error) {
+	target := filepath.Join(root, filepath.FromSlash(spec.Path))
 	existing, err := os.ReadFile(target)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -192,16 +226,16 @@ func planFile(root string, path string, source []byte, options Options) (string,
 			}
 			return "created", nil
 		}
-		return "", fmt.Errorf("read %s: %w", path, err)
+		return "", fmt.Errorf("read %s: %w", spec.Path, err)
 	}
-	if bytes.Equal(existing, source) {
+	if spec.CreateOnly || bytes.Equal(existing, source) {
 		return "unchanged", nil
 	}
 	if !isGenerated(existing) {
-		return "", fmt.Errorf("%s exists and is not dygo-generated", path)
+		return "", fmt.Errorf("%s exists and is not dygo-generated", spec.Path)
 	}
 	if !options.Force {
-		return "", fmt.Errorf("%s already exists with dygo-generated content; rerun with --force to overwrite", path)
+		return "", fmt.Errorf("%s already exists with dygo-generated content; rerun with --force to overwrite", spec.Path)
 	}
 	if options.DryRun {
 		return "would update", nil
@@ -210,7 +244,7 @@ func planFile(root string, path string, source []byte, options Options) (string,
 }
 
 func writeFile(root string, spec fileSpec, source []byte, options Options) error {
-	status, err := planFile(root, spec.Path, source, options)
+	status, err := planFile(root, spec, source, options)
 	if err != nil {
 		return err
 	}

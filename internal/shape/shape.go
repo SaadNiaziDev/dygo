@@ -204,6 +204,21 @@ func PageMetadataFileName(page string) string {
 	return page + PageMetadataFileSuffix
 }
 
+// PageViewFileName returns the canonical Vue filename for a page bundle.
+func PageViewFileName(page string) string {
+	return page + ".vue"
+}
+
+// PageViewPath returns the app-relative Vue path for a page bundle.
+func PageViewPath(page string) string {
+	return filepath.ToSlash(filepath.Join(AppPagesDir, page, PageViewFileName(page)))
+}
+
+// AppPageAccessPath returns the project-relative access metadata path for a Page.
+func AppPageAccessPath(app string, page string) string {
+	return filepath.ToSlash(filepath.Join(AppDir(app), AppAccessDir, page+".page.access.yml"))
+}
+
 // ReportFilePath returns the app-relative single-file report metadata path.
 func ReportFilePath(report string) string {
 	return filepath.ToSlash(filepath.Join(AppReportsDir, report+".yml"))

@@ -18,10 +18,12 @@
     "paths": {
       "@/*": ["./src/*"],
       "@dygo/ui": ["./src/design/index.ts"],
-      "@dygo/ui/*": ["./src/design/*"]
+      "@dygo/ui/*": ["./src/design/*"],
+      "vue": ["./node_modules/vue"],
+      "vue-router": ["./node_modules/vue-router"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.vue", "../pages/**/*.vue", "../../**/pages/**/*.vue"],
   "exclude": ["src/**/*.test.ts"],
   "references": []
 }

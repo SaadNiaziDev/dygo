@@ -77,7 +77,7 @@ The default path is:
 2. Install the app.
 3. Let Studio render the app globally.
 
-Custom UI is coming soon, but the basic app shape should work through Studio metadata first.
+Custom UI is an App-owned Vue Page created with `dygo generate page`. The default path is still metadata-driven Entity surfaces.
 
 ## Appearance
 
@@ -89,7 +89,7 @@ Light and Dark stay fixed. System follows the operating system color scheme.
 
 Studio saves signed-in preferences in the Studio Preference Entity. Theme, sounds, sidebar state, recent pages, page size, and hidden columns follow the user across sessions. The browser retains the theme for the login screen. Existing browser settings are imported only when the server has no value for that key.
 
-Pin an Entity, Page, or saved Record from its header to add it to the personal Pinned section above the main navigation. Pinned items follow the signed-in user. The section shows five items until See more is selected, and supports drag or keyboard reordering.
+Pin an Entity, Page, or saved Record from its header to add it to the personal Pinned section above the main navigation. Pages do not appear in the Entity list. Pinned items follow the signed-in user. The section shows five items until See more is selected, and supports drag or keyboard reordering.
 
 ## Record List Filters
 

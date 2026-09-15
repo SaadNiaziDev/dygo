@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ArrowUpRight } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 
 import { ErrorState, Spinner } from '@/design'
@@ -107,7 +106,13 @@ const groups = computed<EntityGroup[]>(() => {
               <span v-if="entity.description">{{ entity.description }}</span>
               <span v-else>Open {{ entity.label }}</span>
             </span>
-            <ArrowUpRight class="entity-index__arrow" aria-hidden="true" :size="15" :stroke-width="1.8" />
+            <component
+              :is="iconForEntity('arrow-up-right')"
+              class="entity-index__arrow"
+              aria-hidden="true"
+              :size="15"
+              :stroke-width="1.8"
+            />
           </RouterLink>
         </div>
       </section>
@@ -238,6 +243,7 @@ const groups = computed<EntityGroup[]>(() => {
   line-height: 1.4;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .entity-index__state,

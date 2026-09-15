@@ -295,6 +295,57 @@ func TestGenerateAppRejectsReservedAppName(t *testing.T) {
 	}
 }
 
+func TestGeneratePageCreatesBundle(t *testing.T) {
+	root := t.TempDir()
+	writeCLIProjectRoot(t, root)
+	writeCLIApp(t, filepath.Join(root, "apps", "sales"), "sales")
+	t.Chdir(root)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := Run(context.Background(), []string{"generate", "page", "sales/board", "--dry-run"}, strings.NewReader(""), &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("Run(generate page --dry-run) error = %v, want nil", err)
+	}
+	for _, want := range []string{
+		"file: apps/sales/pages/board/board.page.yml (would create)",
+		"file: apps/sales/access/board.page.access.yml (would create)",
+		"file: apps/sales/pages/board/board.vue (would create)",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("generate page dry-run stdout = %q, want substring %q", stdout.String(), want)
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	if err := Run(context.Background(), []string{"generate", "page", "sales/board"}, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("Run(generate page) error = %v, want nil", err)
+	}
+	for _, path := range []string{
+		"apps/sales/pages/board/board.page.yml",
+		"apps/sales/access/board.page.access.yml",
+		"apps/sales/pages/board/board.vue",
+	} {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(path))); err != nil {
+			t.Fatalf("Stat(%s) error = %v, want generated file", path, err)
+		}
+	}
+	vuePath := filepath.Join(root, "apps", "sales", "pages", "board", "board.vue")
+	custom := "<template><p>custom</p></template>"
+	if err := os.WriteFile(vuePath, []byte(custom), 0o644); err != nil {
+		t.Fatalf("WriteFile(board.vue) error = %v", err)
+	}
+	stdout.Reset()
+	stderr.Reset()
+	if err := Run(context.Background(), []string{"generate", "page", "sales/board", "--force"}, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("Run(generate page --force) error = %v, want nil", err)
+	}
+	if got := readCLIFile(t, vuePath); got != custom {
+		t.Fatalf("board.vue changed after generate page --force:\n%s", got)
+	}
+}
+
 func readCLIFile(t *testing.T, path string) string {
 	t.Helper()
 	data, err := os.ReadFile(path)

@@ -152,6 +152,13 @@ func (c Catalog) discoverApp(app manifest.LoadedApp) ([]LoadedPage, error) {
 			return nil, fmt.Errorf("load page for app %q from %s: %w", app.Manifest.Name, metadataPath, err)
 		}
 		page.App = app.Manifest.Name
+		if page.Renderer == "vue" {
+			viewPath := filepath.Join(pageDir, shape.PageViewFileName(entry.Name()))
+			info, err := os.Stat(viewPath)
+			if err != nil || !info.Mode().IsRegular() {
+				return nil, fmt.Errorf("page %s renderer vue requires %s", metadataPath, viewPath)
+			}
+		}
 		page.Name = app.Manifest.Name + "." + page.Key
 		page.Source = "file"
 		loaded = append(loaded, LoadedPage{AppName: app.Manifest.Name, AppDir: app.Dir, Path: metadataPath, Page: page})
@@ -233,7 +240,7 @@ func ValidatePage(p dygo.Page) error {
 	}
 	if strings.TrimSpace(p.Renderer) == "" {
 		problems = append(problems, "renderer is required")
-	} else if p.Renderer != "entity-index" {
+	} else if p.Renderer != "entity-index" && p.Renderer != "vue" {
 		problems = append(problems, fmt.Sprintf("renderer %q is not supported", p.Renderer))
 	}
 	if len(problems) > 0 {

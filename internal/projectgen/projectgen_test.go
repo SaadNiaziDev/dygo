@@ -162,7 +162,7 @@ func TestGenerateInstallsStudioCacheFromFrameworkBuild(t *testing.T) {
 	assertContains(t, readFile(t, filepath.Join(root, ".dygo", "apps", "studio", "ui", "dist", "index.html")), "studio")
 	assertContains(t, readFile(t, filepath.Join(root, ".dygo", "apps", "studio", "ui", "dist", "assets", "index.js")), "console.log")
 	assertContains(t, readFile(t, filepath.Join(root, ".dygo", "apps", "studio", "app.yml")), "name: studio")
-	assertContains(t, readFile(t, filepath.Join(root, ".dygo", "apps", "studio", "pages", "home", "home.page.yml")), "renderer: entity-index")
+	assertContains(t, readFile(t, filepath.Join(root, ".dygo", "apps", "studio", "pages", "home", "home.page.yml")), "renderer: vue")
 }
 
 func TestGenerateDefaultsModuleToName(t *testing.T) {

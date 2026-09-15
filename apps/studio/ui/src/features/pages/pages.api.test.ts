@@ -21,7 +21,7 @@ test('getPage requests the exact app and Page key', async (t) => {
         description: 'Start page',
         icon: 'house',
         path: '/',
-        renderer: 'entity-index',
+        renderer: 'vue',
         options: {},
         app: { name: 'studio', label: 'Studio' },
       },
@@ -29,7 +29,7 @@ test('getPage requests the exact app and Page key', async (t) => {
   }) as typeof fetch
 
   const page = await getPage('studio', 'home')
-  assert.equal(page.renderer, 'entity-index')
+  assert.equal(page.renderer, 'vue')
   assert.equal(page.path, '/')
 })
 
