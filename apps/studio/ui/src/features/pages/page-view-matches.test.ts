@@ -5,6 +5,7 @@ import { pageViewMatches } from './page-view-matches.ts'
 
 test('pageViewMatches uses the app folder when the glob keeps it', () => {
   assert.equal(pageViewMatches('../../../../../sales/pages/board/board.vue', 'sales', 'board'), true)
+  assert.equal(pageViewMatches('../../../../../sales/pages/purchases/purchases.vue', 'sales', 'purchases'), true)
   assert.equal(pageViewMatches('../../../../../sales/pages/board/board.vue', 'studio', 'board'), false)
 })
 

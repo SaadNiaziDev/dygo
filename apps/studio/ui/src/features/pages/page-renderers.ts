@@ -8,7 +8,10 @@ const renderers = new Map<string, Component>([
   ['entity-index', HomePage],
 ])
 
-const pageViews = import.meta.glob<Component>('../../../../pages/*/*.vue', { eager: true, import: 'default' })
+const pageViews = import.meta.glob<Component>([
+  '../../../../pages/*/*.vue',
+  '../../../../../*/pages/*/*.vue',
+], { eager: true, import: 'default' })
 
 export function resolvePageRenderer(page: StudioPageDescriptor): Component | null {
   const builtin = pageRenderer(page.renderer)

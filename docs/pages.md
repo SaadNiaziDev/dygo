@@ -40,7 +40,7 @@ options: {}
 
 ## Vue renderer
 
-`renderer: vue` loads the sibling `<page>.vue` file. Studio compiles that file into the Studio UI. The component receives a `page` prop with label, description, path, options, and owning App.
+`renderer: vue` loads the sibling `<page>.vue` file from any App under `apps/<app>/pages/<page>/`. Studio compiles those files into the Studio UI during `dygo dev` and Studio production builds. The component receives a `page` prop with label, description, path, options, and owning App.
 
 Page identity is app-scoped. The bundle directory is the Page key. The runtime name is `<app>.<key>`.
 

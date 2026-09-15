@@ -23,7 +23,7 @@
       "vue-router": ["./node_modules/vue-router"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "../pages/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.vue", "../pages/**/*.vue", "../../**/pages/**/*.vue"],
   "exclude": ["src/**/*.test.ts"],
   "references": []
 }

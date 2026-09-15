@@ -5,6 +5,7 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig, searchForWorkspaceRoot } from 'vite'
 
 const studioRoot = fileURLToPath(new URL('..', import.meta.url))
+const appsRoot = fileURLToPath(new URL('../..', import.meta.url))
 const studioPages = fileURLToPath(new URL('../pages', import.meta.url))
 const studioUIImporter = fileURLToPath(new URL('./src/app/main.ts', import.meta.url))
 
@@ -24,6 +25,7 @@ export default defineConfig({
       name: 'dygo-watch-app-pages',
       configureServer(server) {
         server.watcher.add(studioPages)
+        server.watcher.add(appsRoot)
       },
     },
     {
@@ -53,7 +55,7 @@ export default defineConfig({
     port: 6791,
     strictPort: true,
     fs: {
-      allow: [searchForWorkspaceRoot(fileURLToPath(new URL('.', import.meta.url))), studioRoot],
+      allow: [searchForWorkspaceRoot(fileURLToPath(new URL('.', import.meta.url))), studioRoot, appsRoot],
     },
     proxy: {
       '/api': 'http://127.0.0.1:6790',

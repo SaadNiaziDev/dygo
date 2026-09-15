@@ -15,7 +15,7 @@ Read `docs/pages.md`, `docs/studio.md`, and the Page-related parts of `docs/app-
 
 - Keep the Page bundle app-owned under the documented `pages/` path.
 - Use `dygo generate page <app>/<page>` to create YAML, Vue, and access files.
-- Use `renderer: vue` with a sibling `<page>.vue` file. Studio Home lives at `apps/studio/pages/home/`.
+- Use `renderer: vue` with a sibling `<page>.vue` file under `apps/<app>/pages/<page>/`. Studio globs every App's Page Vue files into the host. Studio Home lives at `apps/studio/pages/home/`.
 - Use `renderer: entity-index` when a Page should show the entity list UI without a sibling Vue file.
 - Let Studio own rendering, layout, permissions, loading, errors, and shared interaction patterns.
 - Prefer normal Entity and Record surfaces when they solve the task.
