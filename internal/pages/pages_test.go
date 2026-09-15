@@ -53,6 +53,32 @@ func TestCatalogRejectsLegacyPageFilename(t *testing.T) {
 	}
 }
 
+func TestCatalogRequiresVueFileForVueRenderer(t *testing.T) {
+	root := t.TempDir()
+	pageDir := filepath.Join(root, "pages", "board")
+	if err := os.MkdirAll(pageDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(pageDir, shape.PageMetadataFileName("board"))
+	if err := os.WriteFile(path, []byte("label: Board\nroute:\n  path: /board\nrenderer: vue\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := New([]manifest.LoadedApp{{Dir: root, Manifest: manifest.Manifest{Name: "sales"}}}).Validate()
+	if err == nil || !strings.Contains(err.Error(), "board.vue") {
+		t.Fatalf("Validate() error = %v, want missing Vue file", err)
+	}
+	if err := os.WriteFile(filepath.Join(pageDir, shape.PageViewFileName("board")), []byte("<template></template>\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := New([]manifest.LoadedApp{{Dir: root, Manifest: manifest.Manifest{Name: "sales"}}}).Validate()
+	if err != nil {
+		t.Fatalf("Validate() error = %v, want nil", err)
+	}
+	if len(loaded) != 1 || loaded[0].Page.Renderer != "vue" {
+		t.Fatalf("loaded = %+v, want vue Page", loaded)
+	}
+}
+
 func TestDecodeValidatesPagePathAndRenderer(t *testing.T) {
 	for name, input := range map[string]string{
 		"nested path":      "label: Home\nroute:\n  path: /admin/home\nrenderer: entity-index\n",
@@ -63,5 +89,15 @@ func TestDecodeValidatesPagePathAndRenderer(t *testing.T) {
 				t.Fatal("Decode() error = nil, want validation error")
 			}
 		})
+	}
+}
+
+func TestDecodeAcceptsVueRenderer(t *testing.T) {
+	page, err := Decode([]byte("label: Board\nroute:\n  path: /board\nrenderer: vue\n"))
+	if err != nil {
+		t.Fatalf("Decode() error = %v, want nil", err)
+	}
+	if page.Renderer != "vue" {
+		t.Fatalf("renderer = %q, want vue", page.Renderer)
 	}
 }

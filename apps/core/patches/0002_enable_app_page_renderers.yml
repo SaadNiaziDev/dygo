@@ -1,0 +1,10 @@
+kind: patch
+version: 1
+id: 0002_enable_app_page_renderers
+phase: pre-sync
+description: Allow declared App renderers while preserving existing Pages.
+operations:
+  - type: sql
+    name: drop-page-renderer-check
+    reason: Structured operations cannot remove the obsolete built-in-only select constraint.
+    statement: ALTER TABLE IF EXISTS "page" DROP CONSTRAINT IF EXISTS "page_renderer_check";

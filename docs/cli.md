@@ -88,6 +88,7 @@ This document describes the dygo CLI command surface. Commands that are intentio
 - `dygo generate collection <app>/<collection>` - Generates reusable collection row Entity metadata.
 - `dygo generate hook <app>/<entity>` - Adds Entity hook scaffolding and project runner wiring to an existing Entity.
 - `dygo generate job <app>/<job>` - Adds Job metadata, a starter `run.go`, and project runner wiring.
+- `dygo generate page <app>/<page>` - Adds a Page bundle: YAML metadata, a Vue starter, and Page access.
 - `dygo generate fixture <app>/<entity>` - Adds a fixture skeleton to an existing Entity.
 - `dygo generate test <app>/<entity>` - Adds Go test boilerplate for an existing Entity.
 
@@ -108,6 +109,8 @@ Collection generators create metadata only. Collection rows do not get fixture s
 - `dygo generate hook <app>/<entity> --force` - Refreshes generated runner wiring only; existing `hooks.go` files are developer-owned and are not overwritten.
 - `dygo generate job <app>/<job> --dry-run` - Prints Job scaffold and runner wiring changes without writing.
 - `dygo generate job <app>/<job> --force` - Refreshes dygo-generated Job metadata only; existing `run.go` files are developer-owned and are not overwritten.
+- `dygo generate page <app>/<page> --dry-run` - Prints Page files that would be created or updated without writing.
+- `dygo generate page <app>/<page> --force` - Overwrites dygo-generated Page YAML and access only; existing Vue files are not overwritten.
 - `dygo generate fixture <app>/<entity> --dry-run` - Prints fixture skeleton files that would be created or updated without writing.
 - `dygo generate fixture <app>/<entity> --force` - Overwrites dygo-generated fixture skeletons only; custom files still fail.
 - `dygo generate test <app>/<entity> --dry-run` - Prints Go test files that would be created or updated without writing.

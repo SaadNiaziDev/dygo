@@ -25,6 +25,7 @@ project/                         - Generated dygo project root
       access/                    - App access metadata
         _roles.yml               - App-contributed global roles
         <entity>.access.yml      - Entity access policy contribution
+        <page>.page.access.yml   - Page access policy contribution
       jobs/                      - App background jobs
         <job>/                   - Job bundle
           job.yml                - Job metadata definition
@@ -33,6 +34,7 @@ project/                         - Generated dygo project root
       pages/                     - Custom app pages
         <page>/                  - Custom page bundle
           <page>.page.yml        - Page metadata definition
+          <page>.vue             - Vue Page view for renderer: vue
       reports/                   - Cross-Entity report definitions
         <report>.yml             - Single-file report metadata
         <report>/                - Folder-form report bundle

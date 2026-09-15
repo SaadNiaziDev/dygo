@@ -1,0 +1,14 @@
+<script setup lang="ts">
+import type { StudioPageDescriptor } from '@/features/pages/pages.api'
+
+defineProps<{
+  page: StudioPageDescriptor
+}>()
+</script>
+
+<template>
+  <section class="studio-page">
+    <h1>{{ "{{" }} page.label {{ "}}" }}</h1>
+    <p>{{ "{{" }} page.description {{ "}}" }}</p>
+  </section>
+</template>

@@ -61,6 +61,7 @@ fields:
     options:
       values:
         - entity-index
+        - vue
 
   - name: options
     label: Options
