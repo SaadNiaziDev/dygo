@@ -74,8 +74,8 @@ func TestUpgradeProjectUpdatesGoModAndGeneratedRunner(t *testing.T) {
 		t.Fatalf("Studio manifest = %q, want upgraded Studio App metadata", studioManifest)
 	}
 	studioHome := readUpgradeTestFile(t, filepath.Join(root, ".dygo", "apps", "studio", "pages", "home", "home.page.yml"))
-	if !strings.Contains(studioHome, "renderer: entity-index") {
-		t.Fatalf("Studio home Page = %q, want bundled entity-index renderer", studioHome)
+	if !strings.Contains(studioHome, "renderer: vue") {
+		t.Fatalf("Studio home Page = %q, want bundled vue renderer", studioHome)
 	}
 }
 

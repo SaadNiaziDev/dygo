@@ -9,6 +9,8 @@ export type StudioPageClaim = {
   app: string
   key: string
   path: string
+  label?: string
+  icon?: string
 }
 
 export type StudioBoot = {

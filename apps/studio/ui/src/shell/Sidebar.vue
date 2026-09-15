@@ -27,7 +27,7 @@ const emit = defineEmits<{
     <nav v-if="items.length > 0" class="studio-sidebar__nav">
       <RouterLink
         v-for="item in items"
-        :key="item.label"
+        :key="item.to"
         class="studio-sidebar__item"
         :class="{ 'studio-sidebar__item--current': item.current }"
         :to="item.to"

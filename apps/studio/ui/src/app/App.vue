@@ -11,6 +11,7 @@ import ToastHost from '@/features/toasts/ToastHost.vue'
 import { useToast } from '@/features/toasts/use-toast'
 import { setAPIDialogHandler, setAPIToastHandler } from '@/features/api/client'
 import { iconForEntity } from '@/features/metadata/entity-icons'
+import { studioPageNavItems } from '@/features/pages/page-nav'
 import { routeParam, RouteName } from '@/router/routes'
 import { installBootRoutes } from '@/router'
 import { useMetadataEntitiesQuery } from '@/features/metadata/metadata.query'
@@ -76,18 +77,28 @@ const metadataEntitiesError = computed(() => (
 ))
 
 const navItems = computed<ShellNavItem[]>(() => {
-  return metadataEntities.value
+  const pages = studioPageNavItems(bootStore.pages, route.path).flatMap((page) => {
+    if (!page) return []
+    return [{
+      label: page.label,
+      to: page.to,
+      icon: iconForEntity(page.icon),
+      current: page.current,
+    }]
+  })
+  const entities = metadataEntities.value
     .filter((entity) => !entity['is-collection'] && entity.slug)
-    .map((entity) => {
-      const slug = entity.slug as string
-
-      return {
+    .flatMap((entity) => {
+      const slug = entity.slug
+      if (!slug) return []
+      return [{
         label: entity.label || humanizeEntity(slug),
         to: `/${slug}`,
         icon: iconForEntity(entity.icon),
         current: isEntityRoute(slug),
-      }
+      }]
     })
+  return [...pages, ...entities]
 })
 
 const userName = computed(() => authStore.currentUser?.['full-name'] || authStore.currentUser?.email || 'Studio user')

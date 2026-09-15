@@ -17,9 +17,14 @@ dygo generate page <app>/<page>
 
 The generator writes Page metadata, a Vue starter, and `access/<page>.page.access.yml`. It does not overwrite an existing Vue file. `--force` refreshes dygo-generated YAML and access only.
 
-## Framework renderer
+## Home
 
-Home uses the built-in entity index:
+Studio Home is a Vue Page in the Studio App bundle:
+
+```txt
+apps/studio/pages/home/home.page.yml
+apps/studio/pages/home/home.vue
+```
 
 ```yaml
 label: Home
@@ -27,11 +32,11 @@ description: Start page for the entities available to the current Studio user.
 icon: house
 route:
   path: /
-renderer: entity-index
+renderer: vue
 options: {}
 ```
 
-`path` is `/` or one kebab-case root path such as `/board`. `renderer` is `entity-index` or `vue`. `options` is a YAML map passed to the Page component.
+`path` is `/` or one kebab-case root path such as `/board`. `renderer` is `entity-index` or `vue`. `options` is a YAML map passed to the Page component. `entity-index` still loads the entity list UI without a sibling Vue file.
 
 ## Vue renderer
 
@@ -45,4 +50,4 @@ The public Go contract is in `pkg/dygo`. Studio owns the Page host, routing, loa
 
 A Vue Page can use Studio design components and Record clients the same way other Studio screens do. Permissions stay on the server. Opening a Page does not grant access to its Records.
 
-Studio does not put Pages in the Entity sidebar. Pin a Page from its header to keep it in the personal Pinned section.
+Studio lists App Pages in the sidebar, except Home. Home stays on the Studio home control. Pin a Page from its header to keep it in the personal Pinned section.

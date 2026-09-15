@@ -1,17 +1,14 @@
 import type { Component } from 'vue'
 
-import EntityIndexRenderer from '@/renderers/pages/EntityIndexRenderer.vue'
+import HomePage from '../../../../pages/home/home.vue'
 import type { StudioPageDescriptor } from './pages.api'
 import { pageViewMatches } from './page-view-matches'
 
 const renderers = new Map<string, Component>([
-  ['entity-index', EntityIndexRenderer],
+  ['entity-index', HomePage],
 ])
 
-const pageViews = import.meta.glob<Component>([
-  '../../../../../**/pages/*/*.vue',
-  '../../../../../../../../apps/**/pages/*/*.vue',
-], { eager: true, import: 'default' })
+const pageViews = import.meta.glob<Component>('../../../../pages/*/*.vue', { eager: true, import: 'default' })
 
 export function resolvePageRenderer(page: StudioPageDescriptor): Component | null {
   const builtin = pageRenderer(page.renderer)

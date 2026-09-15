@@ -9,6 +9,6 @@ test('pageViewMatches uses the app folder when the glob keeps it', () => {
 })
 
 test('pageViewMatches accepts Studio-relative Page globs for studio only', () => {
-  assert.equal(pageViewMatches('../../../../pages/board/board.vue', 'studio', 'board'), true)
-  assert.equal(pageViewMatches('../../../../pages/board/board.vue', 'sales', 'board'), false)
+  assert.equal(pageViewMatches('../../../../pages/home/home.vue', 'studio', 'home'), true)
+  assert.equal(pageViewMatches('../../../../pages/home/home.vue', 'sales', 'home'), false)
 })
