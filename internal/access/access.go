@@ -1621,3 +1621,16 @@ func rel(root string, path string) string {
 	}
 	return filepath.ToSlash(relative)
 }
+
+// ApplyPlanTx applies a validated plan in the caller's migration transaction.
+func ApplyPlanTx(ctx context.Context, tx pgx.Tx, plan Plan) (Result, error) {
+	if err := applyPlan(ctx, tx, plan); err != nil {
+		return Result{}, err
+	}
+	return Result{Roles: len(plan.Roles), Permissions: len(plan.Grants)}, nil
+}
+
+// RoleNames reads role references for migration planning without writes.
+func RoleNames(ctx context.Context, queryer roleNameQueryer) ([]string, error) {
+	return listRoleNames(ctx, queryer)
+}

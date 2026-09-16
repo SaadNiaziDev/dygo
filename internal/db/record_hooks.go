@@ -268,3 +268,8 @@ func cloneRecordChanges(changes []map[string]any) []map[string]any {
 	}
 	return cloned
 }
+
+// HasEntity reports whether the executing build registered this Entity's Hooks.
+func (r *RecordHookRegistry) HasEntity(appName, entity string) bool {
+	return r != nil && len(r.entity[entityKey(appName, entity)]) > 0
+}

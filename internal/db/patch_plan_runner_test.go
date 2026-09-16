@@ -77,6 +77,81 @@ func TestBuildPatchPlanFiltersPhase(t *testing.T) {
 	}
 }
 
+func TestBuildLifecyclePatchPlanUsesInstallModes(t *testing.T) {
+	migrationOnly := testLoadedPatch(t, "sales", "0001_history", `  - type: sql
+    name: history
+    reason: Historical migration.
+    statement: SELECT 1;
+`)
+	install := testLoadedPatch(t, "sales", "0002_seed", `  - type: sql
+    name: seed
+    reason: Fresh installation setup.
+    statement: SELECT 1;
+`)
+	migrationOnly.Patch.Phase = PatchPhasePostSync
+	install.Patch.Phase = PatchPhasePostSync
+	install.Patch.RunOn = patches.RunOnInstall
+
+	plan, err := BuildLifecyclePatchPlan(
+		[]patches.LoadedPatch{migrationOnly, install},
+		nil,
+		LiveSchema{Tables: map[string]liveTable{}},
+		nil,
+		PatchPhasePostSync,
+		map[string]bool{"sales": true},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Baseline) != 1 || plan.Baseline[0].PatchID != "0001_history" {
+		t.Fatalf("baseline = %+v", plan.Baseline)
+	}
+	if len(plan.Pending) != 1 || plan.Pending[0].PatchID != "0002_seed" {
+		t.Fatalf("pending = %+v", plan.Pending)
+	}
+}
+
+func TestBuildPatchPlanReportsSimulationBoundary(t *testing.T) {
+	rename := testLoadedPatch(t, "sales", "0001_rename_email", `  - type: rename-field
+    entity: customer
+    from: customer-email
+    to: email
+`)
+	plan, err := BuildPatchPlan(
+		[]patches.LoadedPatch{rename},
+		[]catalog.LoadedEntity{testEntity("sales", "customer", schema.Field{Name: "email", Type: "email"})},
+		liveWithTables("sales_customer", map[string]liveColumn{"customer_email": {Name: "customer_email", Type: "text", Nullable: true}}),
+		nil,
+		PatchPhasePreSync,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.UnsimulatedSQL {
+		t.Fatal("structured rename marked unsimulated")
+	}
+	columns := plan.SchemaAfter.Tables["sales_customer"].Columns
+	if _, exists := columns["email"]; !exists {
+		t.Fatalf("simulated columns = %+v", columns)
+	}
+	if _, exists := columns["customer_email"]; exists {
+		t.Fatalf("simulated columns retain renamed field: %+v", columns)
+	}
+
+	raw := testLoadedPatch(t, "sales", "0002_raw", `  - type: sql
+    name: custom-ddl
+    reason: Structured operations cannot express it.
+    statement: SELECT 1;
+`)
+	plan, err = BuildPatchPlan([]patches.LoadedPatch{raw}, nil, LiveSchema{Tables: map[string]liveTable{}}, nil, PatchPhasePreSync)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !plan.UnsimulatedSQL {
+		t.Fatal("raw SQL did not mark schema plan deferred")
+	}
+}
+
 func TestBuildPatchPlanRejectsChecksumMismatch(t *testing.T) {
 	patch := testLoadedPatch(t, "sales", "0001_rename_email", `  - type: sql
     name: normalize

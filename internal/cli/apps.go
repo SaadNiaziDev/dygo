@@ -10,11 +10,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAppCommand(stdout io.Writer) *cobra.Command {
+func newAppCommand(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	cmd := newCommandGroup("app", "Manage dygo apps")
 
 	cmd.AddCommand(newAppsListCommand(stdout))
 	cmd.AddCommand(newAppsValidateCommand(stdout))
+	cmd.AddCommand(newAppInstallCommand(stdin, stdout, stderr))
 
 	return cmd
 }

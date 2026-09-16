@@ -17,6 +17,11 @@
       "type": "string",
       "enum": ["pre-sync", "post-sync"]
     },
+    "run-on": {
+      "type": "string",
+      "enum": ["migrate", "install", "both"],
+      "default": "migrate"
+    },
     "description": {
       "type": "string",
       "minLength": 1
@@ -28,6 +33,10 @@
     }
   },
   "allOf": [
+    {
+      "if": {"required": ["run-on"], "properties": {"run-on": {"enum": ["install", "both"]}}},
+      "then": {"properties": {"phase": {"const": "post-sync"}}}
+    },
     {
       "if": {
         "properties": {

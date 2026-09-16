@@ -4,13 +4,13 @@ Fixtures are app-owned seed Records.
 
 They are for reference data, demo/setup data, and other ordinary runtime defaults that should be versioned with an App. App access roles and grants move to [Access](access.md); they should not remain generic fixtures once the access metadata loader exists.
 
-Apply fixtures explicitly:
+Apply Fixtures with the rest of the database lifecycle:
 
 ```sh
-dygo fixture apply
+dygo db migrate
 ```
 
-Use `dygo db prepare` when preparing a full usable environment that should run migration, access apply, and fixture apply together.
+Use `dygo db prepare` when the configured database may not exist yet.
 
 Use fixture commands when authoring, debugging, or exporting fixture files. For example, validate fixture files without database writes:
 
@@ -18,10 +18,10 @@ Use fixture commands when authoring, debugging, or exporting fixture files. For 
 dygo fixture validate
 ```
 
-Apply fixtures directly to another encrypted environment with `--env`:
+Apply Fixtures to another encrypted environment with `--env`:
 
 ```sh
-dygo fixture apply --env staging
+dygo db migrate --env staging
 ```
 
 ## File Shape
@@ -106,25 +106,25 @@ Denied fixture files should fail with an error that names the correct authoring 
 
 `dygo fixture validate` discovers fixtures from all loaded Apps and validates fixture files, match fields, link references, dependency cycles, and collection limitations without writing records.
 
-`dygo fixture apply` performs the same validation, prints a plan, prompts, then applies records in deterministic order inside one transaction. Apply order is derived from link dependencies between fixture Entities, not from numeric filename prefixes.
+`dygo db migrate` performs the same validation, includes Fixture counts in its plan, then applies records in deterministic dependency order inside the migration transaction.
 
 For each fixture record, dygo finds an existing Record through `match`. If one exists, it updates it. If none exists, it creates it through the generic Record runtime.
 
-Use `--dry-run` to print the plan without writing, and `--yes` to skip the interactive prompt after reviewing the plan:
+Use `--dry-run` to print the migration plan without writing, and `--yes` to skip the interactive prompt:
 
 ```sh
-dygo fixture apply --dry-run
-dygo fixture apply --yes
+dygo db migrate --dry-run
+dygo db migrate --yes
 ```
 
-The command prints:
+The result includes:
 
 ```txt
-fixtures applied: 3 created, 2 updated (development)
+fixture records: 3 created, 2 updated
 ```
 
 ## Boundaries
 
-`dygo db migrate` does not apply fixtures. Use `dygo fixture apply` for explicit fixture loading, or `dygo db prepare` for first-time environment preparation.
+Fixtures have no independent database apply path. `dygo fixture validate` remains available for authoring checks, and `dygo fixture export` writes source files.
 
 Fixtures do not delete Records, prune schema, run patches, track history, or expose HTTP endpoints.

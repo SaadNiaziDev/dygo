@@ -61,8 +61,11 @@ Required top-level fields:
 | `phase` | `pre-sync` or `post-sync`. |
 | `description` | Human explanation shown in plans and logs. |
 | `operations` | Ordered operations to run inside the patch transaction. |
+| `run-on` | Optional lifecycle mode: `migrate` (default), `install`, or `both`. |
 
 Patch ids are scoped to the owning app. Do not edit an applied patch. If the database needs another change, add a new patch file.
+
+`run-on: migrate` describes historical upgrades. A fresh App installation records it as `baselined` without executing its operations. `run-on: install` runs only while the App is first installed, and `run-on: both` runs for installation and later migrations. Install-capable patches must use `post-sync` because their target metadata must exist first.
 
 ## Phases
 
@@ -214,23 +217,21 @@ SQL exists for real production needs, but it is a reviewed escape hatch, not the
 
 ## Runner Semantics
 
-v1 applies one patch per transaction.
+`dygo db migrate` owns one transaction for the complete lifecycle:
 
-For each pending patch, the runner:
+1. Revalidate source and the reviewed plan under the database lifecycle lock.
+2. Run pending pre-sync patch operations.
+3. Apply schema and registry metadata.
+4. Record fresh-install historical patches as baselined.
+5. Run pending post-sync patch operations.
+6. Apply access metadata and Fixtures.
+7. Activate newly installed Apps and commit.
 
-1. Load and validate the patch file.
-2. Check the patch ledger for an existing applied record.
-3. Refuse to continue if the same app/id has an applied record with a different checksum.
-4. Begin a transaction.
-5. Run operations in file order.
-6. Insert the patch ledger row.
-7. Commit the transaction.
-
-If any operation fails, the transaction rolls back and no successful ledger row is written. The same patch can be retried after the author fixes the cause.
+If any step fails, PostgreSQL rolls back patch operations, ledger rows, schema, metadata, access, Fixtures, and App state together. The same migration can be retried from the last committed state.
 
 Patches should be written to tolerate retries where practical, but v1 does not require every operation to be globally idempotent. Structured operations should validate the expected before/after shape and fail clearly when the database is not in the expected state.
 
-After a successful apply that ran at least one patch, dygo refreshes `db/schema.sql`. If the snapshot refresh fails after patches are committed, dygo reports the snapshot error; it does not roll back already committed patches.
+After commit, dygo refreshes `db/schema.sql`. If snapshot refresh fails, dygo reports that the migration committed and the snapshot still needs repair.
 
 dygo does not automate backups before patches yet. Take and verify backups before applying patches to production.
 
@@ -249,6 +250,7 @@ The Core `patch-run` record stores:
 | `checksum` | SHA-256 of the exact patch file bytes. |
 | `applied-at` | Timestamp after operations complete. |
 | `dygo-version` | dygo version that applied the patch, when available. |
+| `outcome` | `applied` when operations ran, or `baselined` for a historical migration skipped during fresh installation. |
 
 The ledger records successful patches. Failed patches are reported by the command and are not recorded as applied.
 

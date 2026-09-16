@@ -2,7 +2,7 @@
 
 dygo is a framework runtime with installable Apps.
 
-The runtime loads installed apps, registers their entities and permissions, and exposes their behavior through APIs, jobs, hooks, and the Studio. Database preparation applies patches, access metadata, and fixtures before serving a usable environment.
+The runtime loads active Apps, registers their Entities and Permissions, and exposes their behavior through APIs, Jobs, Hooks, and Studio. Database migration applies patches, access metadata, and Fixtures before activating a new App.
 
 ## Built-In Apps
 
@@ -97,7 +97,7 @@ Hooks are app-owned Go code inside Entity bundles. A file such as `entities/lead
 
 Patches are app-owned lifecycle changes for unsafe transitions that metadata cannot infer, such as renames, drops, destructive type changes, and data backfills. See [Explicit Patches](patches.md) for the v1 runner workflow.
 
-Fixtures are app-owned seed Records for reference, demo, and setup data. They live inside Entity bundles as `entities/<entity>/fixtures.yml` and can be applied explicitly with `dygo fixture apply`. Roles and Entity access policies use [Access](access.md). See [Fixtures](fixtures.md) for the v1 file shape.
+Fixtures are app-owned seed Records for reference, demo, and setup data. They live inside Entity bundles as `entities/<entity>/fixtures.yml` and are applied by `dygo db migrate`. Roles and Entity access policies use [Access](access.md). See [Fixtures](fixtures.md) for the v1 file shape.
 
 ## Install Locations
 
@@ -111,7 +111,9 @@ The rest of generated project `.dygo/` contains ignored runtime state, Studio ca
 
 ## Hierarchy
 
-dygo runtime loads installed Apps.
+dygo runtime exposes active Apps. Installed Apps remain hidden until their migration transaction completes; disabled Apps keep their metadata, storage, and execution history but contribute no runtime routes, Jobs, Schedules, access policies, or Fixtures.
+
+The database `app.version` is the version currently installed. Migration updates it in the same transaction as the App's schema, metadata, patches, access, Fixtures, and activation.
 
 Core is the required system App.
 

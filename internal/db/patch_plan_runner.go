@@ -15,9 +15,12 @@ import (
 
 // PatchPlan is a read-only view of patch files against the applied patch ledger.
 type PatchPlan struct {
-	Phase   string
-	Pending []PlannedPatch
-	Applied []AppliedPatch
+	Phase          string
+	Baseline       []PlannedPatch
+	Pending        []PlannedPatch
+	Applied        []AppliedPatch
+	SchemaAfter    LiveSchema
+	UnsimulatedSQL bool
 }
 
 // PlannedPatch is one discovered patch that has not been applied yet.
@@ -46,8 +49,9 @@ type AppliedPatch struct {
 
 // PatchApplyResult reports patches successfully applied by one apply command.
 type PatchApplyResult struct {
-	Phase   string
-	Applied []PatchRun
+	Phase     string
+	Baselined []PatchRun
+	Applied   []PatchRun
 }
 
 type patchTransactionBeginner interface {
@@ -203,7 +207,7 @@ func BuildPatchPlan(loaded []patches.LoadedPatch, entities []catalog.LoadedEntit
 
 	pendingLoaded := []patches.LoadedPatch{}
 	pendingByPatch := map[string]int{}
-	plan := PatchPlan{Phase: phase}
+	plan := PatchPlan{Phase: phase, SchemaAfter: cloneLiveSchema(live)}
 	for _, patch := range loaded {
 		if patch.Patch.Phase != phase {
 			continue
@@ -234,6 +238,8 @@ func BuildPatchPlan(loaded []patches.LoadedPatch, entities []catalog.LoadedEntit
 	if err != nil {
 		return PatchPlan{}, err
 	}
+	plan.SchemaAfter = operationPlan.SchemaAfter
+	plan.UnsimulatedSQL = operationPlan.UnsimulatedSQL
 	for _, operation := range operationPlan.Operations {
 		key := patchRunKey(operation.AppName, operation.PatchID)
 		index, ok := pendingByPatch[key]

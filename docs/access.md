@@ -48,8 +48,8 @@ Current runtime still reads live Core `role`, `user-role`, and `permission` Reco
 - Apps can define roles, but defining a role does not scope that role to the app.
 - Access files can reference any known global role.
 - `dygo access validate` resolves known roles from loaded `_roles.yml` files.
-- `dygo access apply` resolves known roles from loaded `_roles.yml` files and existing database roles.
-- Access apply fails when a policy references a role that is not found in loaded `_roles.yml` files or existing database roles.
+- `dygo db migrate` resolves known roles from loaded `_roles.yml` files and existing database roles.
+- Migration fails when a policy references a role that is not found in loaded `_roles.yml` files or existing database roles.
 - Two apps cannot define the same role name.
 - Role definitions do not record an owning app in the DB for v1.
 - `role` remains a Core Entity in the database.
@@ -61,7 +61,7 @@ Current runtime still reads live Core `role`, `user-role`, and `permission` Reco
 - The permission engine ignores retired grants.
 - Core `role` and `permission` Records are runtime storage for access metadata, not ordinary fixture authoring.
 - Runtime permission checks read database Records only.
-- Access files are authoring metadata that create or update database permission Records through `dygo access apply`.
+- Access files are authoring metadata that create or update database permission Records through `dygo db migrate`.
 - Policy items define full permission grants for `(entity, role)`.
 - Access validation and apply resolve policy contributions into one effective permission grant per `(entity, role)`.
 - The database stores only the final effective permission Record for each `(entity, role)`.
@@ -81,20 +81,15 @@ Current runtime still reads live Core `role`, `user-role`, and `permission` Reco
 - Administrator remains a `user.administrator` flag, not a role.
 - Base actions are `read`, `create`, `update`, `delete`, `export`, and `print`.
 - `policy.can` accepts built-in actions and registered Entity action names.
-- File-to-database sync happens through `dygo access apply`.
+- File-to-database sync happens through `dygo db migrate`.
 - Database-to-file export happens through `dygo access export`.
-- `dygo db migrate` does not apply access files.
-- `dygo db prepare` is repeatable and runs access apply during environment preparation.
-- Access apply is idempotent.
-- Access apply creates or updates roles found in `_roles.yml`.
-- Access apply does nothing when a role disappears from `_roles.yml`.
-- Access apply does not disable or delete roles.
-- Access apply creates or updates permission Records for policy items found in access files.
-- Access apply infers file-owned permission Records from currently loaded access files.
-- Access apply does not retire permission Records by omission in v1.
-- Access apply does not delete permission Records.
-- Access apply updates or un-retires permission Records when their policy items exist in loaded access files.
-- Access apply leaves DB-only Studio-created permission Records alone in v1.
+- `dygo db migrate` and `dygo db prepare` apply access files idempotently.
+- Migration creates or updates roles found in `_roles.yml`.
+- Migration does nothing when a role disappears from `_roles.yml`; it does not disable or delete roles.
+- Migration creates, updates, or un-retires permission Records for policy items found in access files.
+- Migration infers file-owned permission Records from currently loaded access files.
+- Migration does not retire permission Records by omission or delete them in v1.
+- Migration leaves DB-only Studio-created permission Records alone in v1.
 - `dygo access export` must receive an explicit destination app with `--in <app>`.
 - Exported roles are written to `apps/<app>/access/_roles.yml` for the selected `--in` app.
 - Role export only writes roles that are not already represented by any loaded `_roles.yml` file.
@@ -113,18 +108,18 @@ Current runtime still reads live Core `role`, `user-role`, and `permission` Reco
 - Access export never edits another app's access files.
 - Access export does not reorder whole files in v1.
 - Do not add `dygo access import`.
-- Add `dygo access apply`.
+- Apply access only through `dygo db migrate`.
 - Do not expose `dygo permission` as a public CLI command.
 - `dygo access explain <app>/<entity> --user <email> --action <action> [--record <id>]` reports roles, matching policies, row access, and denied fields without SQL.
-- The first access CLI surface is `validate`, `apply`, `list`, `show`, `roles`, and `export`.
+- The access CLI surface is `validate`, `list`, `show`, `roles`, and `export`.
 - `dygo generate app <app>` creates `apps/<app>/access/_roles.yml` by default.
 - `dygo generate app <app> --no-access` skips the access folder.
 - `dygo generate entity <app>/<entity>` creates `apps/<app>/access/<entity>.access.yml` by default.
 - `dygo generate entity <app>/<entity> --no-access` skips the Entity access file.
 - Generated access files are minimal skeletons.
 - Entity generation does not create roles automatically.
-- Fixture validate, apply, and export reject app-owned Core `role` and `permission` Records as fixtures.
-- Fixture validate, apply, and export should share one central fixture deny policy.
+- Fixture validation, migration, and export reject app-owned Core `role` and `permission` Records as Fixtures.
+- Fixture validation, migration, and export share one central Fixture deny policy.
 - The fixture deny policy should live under `internal/fixtures/`, not `internal/reserved/`.
 - `internal/reserved/words.yml` stays limited to reserved naming collisions.
 - Use one deny list for fixtures in v1; do not add restricted fixture categories yet.

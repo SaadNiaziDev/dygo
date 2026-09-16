@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hapyco/dygo/internal/db"
 	"github.com/hapyco/dygo/internal/jobs"
 	namegen "github.com/hapyco/dygo/internal/naming"
 	"github.com/hapyco/dygo/internal/queues"
@@ -252,6 +253,7 @@ func (s Store) ListJobs(ctx context.Context) ([]Job, error) {
 SELECT `+jobSelectColumns+`
 FROM "job" j
 JOIN "app" a ON a.id = j.app_id
+WHERE a.status = 'active'
 ORDER BY a.name ASC, j.key ASC`)
 	if err != nil {
 		return nil, fmt.Errorf("query jobs: %w", err)
@@ -452,7 +454,9 @@ func (s Store) Claim(ctx context.Context, queueNames []string, limit int, worker
 SELECT e.id, j.timeout
 FROM "job_execution" e
 JOIN "job" j ON j.id = e.job_id
-WHERE e.status = $1
+JOIN "app" a ON a.id = j.app_id
+WHERE a.status = 'active'
+  AND e.status = $1
   AND e.run_after <= $2
   AND e.queue = ANY($3)
 ORDER BY e.priority DESC, e.run_after ASC, e.id ASC
@@ -714,11 +718,13 @@ func loadJob(ctx context.Context, tx pgx.Tx, appName string, jobName string) (jo
 	if appName == "" || jobName == "" {
 		return jobRecord{}, fmt.Errorf("job app and name are required")
 	}
+	args := []any{appName, jobName}
+	predicate := db.AppRuntimePredicate(ctx, "a", &args)
 	row := tx.QueryRow(ctx, `
 SELECT `+jobSelectColumns+`
 FROM "job" j
 JOIN "app" a ON a.id = j.app_id
-WHERE a.name = $1 AND j.key = $2`, appName, jobName)
+WHERE a.name = $1 AND j.key = $2 AND `+predicate, args...)
 	job, err := scanJobRecord(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -735,12 +741,14 @@ func loadJobForUpdate(ctx context.Context, tx pgx.Tx, appName string, jobName st
 	if appName == "" || jobName == "" {
 		return jobRecord{}, fmt.Errorf("job app and name are required")
 	}
+	args := []any{appName, jobName}
+	predicate := db.AppRuntimePredicate(ctx, "a", &args)
 	row := tx.QueryRow(ctx, `
 SELECT `+jobSelectColumns+`
 FROM "job" j
 JOIN "app" a ON a.id = j.app_id
-WHERE a.name = $1 AND j.key = $2
-FOR UPDATE OF j`, appName, jobName)
+WHERE a.name = $1 AND j.key = $2 AND `+predicate+`
+FOR UPDATE OF j`, args...)
 	job, err := scanJobRecord(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

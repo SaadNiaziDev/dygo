@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hapyco/dygo/internal/corevalues"
 	"github.com/hapyco/dygo/internal/entity/catalog"
 	"github.com/hapyco/dygo/internal/project"
 	"github.com/jackc/pgx/v5"
@@ -92,6 +93,14 @@ func applyMetadataSchemaPlanAndRecords(ctx context.Context, pool *pgxpool.Pool, 
 	if err := seedSingleEntityRecords(ctx, tx, metadata.Entities); err != nil {
 		return SchemaSyncResult{}, err
 	}
+	// Preserve the standalone Sync contract for internal callers: fresh Apps
+	// become visible when metadata sync commits. Lifecycle migrations call
+	// ApplyMetadataTx and activate only after all migration work succeeds.
+	for _, app := range metadata.Apps {
+		if _, err := tx.Exec(ctx, `UPDATE "app" SET status=$2, updated_at=now() WHERE name=$1 AND status=$3`, app.Manifest.Name, corevalues.AppStatusActive, corevalues.AppStatusInstalled); err != nil {
+			return SchemaSyncResult{}, fmt.Errorf("activate synced App %q: %w", app.Manifest.Name, err)
+		}
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return SchemaSyncResult{}, fmt.Errorf("commit metadata schema transaction: %w", err)
 	}
@@ -135,4 +144,31 @@ func loadMetadataCatalog(root string) (metadataCatalog, error) {
 		return metadataCatalog{}, fmt.Errorf("load metadata for schema: %w", err)
 	}
 	return metadata, nil
+}
+
+// ApplyMetadataTx writes schema and registry metadata in the caller's lifecycle
+// transaction. New Apps remain installed until the caller completes activation.
+func ApplyMetadataTx(ctx context.Context, tx pgx.Tx, plan SchemaPlan, metadata project.RuntimeMetadata) (SchemaSyncResult, error) {
+	if err := plan.BlockerError(); err != nil {
+		return SchemaSyncResult{}, err
+	}
+	if err := executeSchemaPlan(ctx, tx, plan); err != nil {
+		return SchemaSyncResult{}, err
+	}
+	if _, err := persistMetadataRecords(ctx, tx, metadata); err != nil {
+		return SchemaSyncResult{}, err
+	}
+	if err := seedSingleEntityRecords(ctx, tx, metadata.Entities); err != nil {
+		return SchemaSyncResult{}, err
+	}
+	result := plan.Result()
+	result.Apps = len(metadata.Apps)
+	result.Pages = len(metadata.Pages)
+	return result, nil
+}
+
+// LockLifecycle serializes schema and App lifecycle writes in this database.
+func LockLifecycle(ctx context.Context, tx pgx.Tx) error {
+	_, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(1685677935)")
+	return err
 }

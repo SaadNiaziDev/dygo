@@ -22,6 +22,7 @@ import (
 	"github.com/hapyco/dygo/internal/project"
 	"github.com/hapyco/dygo/internal/shape"
 	"github.com/hapyco/dygo/internal/yamlmeta"
+	"github.com/jackc/pgx/v5"
 	"gopkg.in/yaml.v3"
 )
 
@@ -1098,4 +1099,10 @@ func sameStringSet(left, right []string) bool {
 	slices.Sort(left)
 	slices.Sort(right)
 	return slices.Equal(left, right)
+}
+
+// ApplyPlanTx applies Fixtures and Hook effects in the caller's transaction.
+func (r Runner) ApplyPlanTx(ctx context.Context, tx pgx.Tx, plan Plan) (Result, error) {
+	store := runtimeStore{metadata: db.NewMetadataReader(tx), records: newFixtureRecordStore(tx, r.recordHooks)}
+	return applyFilesWithIndex(ctx, store, plan.Files, catalog.NewTargetIndex(plan.Entities))
 }

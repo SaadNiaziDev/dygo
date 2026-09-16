@@ -681,3 +681,9 @@ func (w *queueWakeups) close() {
 	}
 	w.closed = true
 }
+
+// HasJob reports whether the executing build contains a Job handler.
+func (r *Registry) HasJob(appName, jobName string) bool {
+	_, ok := r.handler(appName, jobName)
+	return ok
+}

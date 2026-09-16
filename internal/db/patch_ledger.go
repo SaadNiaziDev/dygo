@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	PatchPhasePreSync  = "pre-sync"
-	PatchPhasePostSync = "post-sync"
+	PatchPhasePreSync     = "pre-sync"
+	PatchPhasePostSync    = "post-sync"
+	PatchOutcomeApplied   = "applied"
+	PatchOutcomeBaselined = "baselined"
 )
 
 // PatchRun is one successful app patch ledger entry.
@@ -25,6 +27,7 @@ type PatchRun struct {
 	Checksum    string
 	AppliedAt   time.Time
 	DygoVersion string
+	Outcome     string
 }
 
 // PatchLedgerQueryer is the database behavior needed by the patch ledger.
@@ -84,7 +87,7 @@ func (l PatchLedger) ListPatchRuns(ctx context.Context) ([]PatchRun, error) {
 		return nil, err
 	}
 	rows, err := l.queryer.Query(ctx, `
-SELECT a.name, p.patch_id, p.path, p.phase, p.checksum, p.applied_at, COALESCE(p.dygo_version, '')
+SELECT a.name, p.patch_id, p.path, p.phase, p.checksum, p.applied_at, COALESCE(p.dygo_version, ''), COALESCE(to_jsonb(p)->>'outcome', 'applied')
 FROM "patch_run" p
 JOIN "app" a ON a.id = p.app_id
 ORDER BY a.name, p.patch_id`)
@@ -113,7 +116,7 @@ func (l PatchLedger) GetPatchRun(ctx context.Context, appName string, patchID st
 		return PatchRun{}, err
 	}
 	row := l.queryer.QueryRow(ctx, `
-SELECT a.name, p.patch_id, p.path, p.phase, p.checksum, p.applied_at, COALESCE(p.dygo_version, '')
+SELECT a.name, p.patch_id, p.path, p.phase, p.checksum, p.applied_at, COALESCE(p.dygo_version, ''), COALESCE(to_jsonb(p)->>'outcome', 'applied')
 FROM "patch_run" p
 JOIN "app" a ON a.id = p.app_id
 WHERE a.name = $1 AND p.patch_id = $2`, appName, patchID)
@@ -163,6 +166,11 @@ func (l PatchLedger) RecordPatchRun(ctx context.Context, run PatchRun) error {
 		"checksum":   systemRecordString(run.Checksum),
 		"applied-at": systemRecordString(appliedAt.Format(time.RFC3339)),
 	}
+	// Applied is the metadata default. Omit it so pre-sync patches can still
+	// write the ledger before older Core schemas gain the outcome Field.
+	if run.Outcome == PatchOutcomeBaselined {
+		input["outcome"] = systemRecordString(run.Outcome)
+	}
 	if strings.TrimSpace(run.DygoVersion) != "" {
 		input["dygo-version"] = systemRecordString(run.DygoVersion)
 	}
@@ -192,13 +200,16 @@ func patchRunLinkError(err error, appName string) error {
 
 func scanPatchRun(row interface{ Scan(...any) error }) (PatchRun, error) {
 	var run PatchRun
-	if err := row.Scan(&run.AppName, &run.PatchID, &run.Path, &run.Phase, &run.Checksum, &run.AppliedAt, &run.DygoVersion); err != nil {
+	if err := row.Scan(&run.AppName, &run.PatchID, &run.Path, &run.Phase, &run.Checksum, &run.AppliedAt, &run.DygoVersion, &run.Outcome); err != nil {
 		return PatchRun{}, err
 	}
 	return run, nil
 }
 
 func validatePatchRun(run PatchRun) error {
+	if run.Outcome != "" && run.Outcome != PatchOutcomeApplied && run.Outcome != PatchOutcomeBaselined {
+		return fmt.Errorf("patch run outcome must be %q or %q", PatchOutcomeApplied, PatchOutcomeBaselined)
+	}
 	if strings.TrimSpace(run.AppName) == "" {
 		return fmt.Errorf("patch run app is required")
 	}

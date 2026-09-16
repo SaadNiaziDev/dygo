@@ -29,10 +29,10 @@ This document describes the dygo CLI command surface. Commands that are intentio
 - `dygo db create` - Creates the configured PostgreSQL database.
 - `dygo db drop` - Prints the drop target, prompts interactively, then drops the configured PostgreSQL database.
 - `dygo db drop --yes` - Drops the configured PostgreSQL database without an interactive prompt.
-- `dygo db migrate` - Requires the configured database to exist, prints the migration plan, prompts interactively, then applies pre-sync patches, metadata sync, post-sync patches, and schema dump.
+- `dygo db migrate` - Requires the configured database to exist, prints the migration plan, prompts, applies App state, patches, metadata, access, and Fixtures in one transaction, then refreshes the schema snapshot.
 - `dygo db migrate --yes` - Applies the migration workflow without an interactive prompt.
 - `dygo db migrate --dry-run` - Prints the migration plan without writing; if the database is missing, reports that it cannot plan without an existing database.
-- `dygo db prepare` - Non-destructively prepares a usable environment by creating the configured database if missing, then running migrate, access apply, and fixture apply.
+- `dygo db prepare` - Creates the configured database if missing, then runs the same migration lifecycle.
 - `dygo db prepare --yes` - Prepares the database without an interactive prompt.
 - `dygo db prepare --dry-run` - Prints the prepare plan without writing.
 - `dygo db prune` - Prints the metadata-orphaned schema cleanup plan, prompts interactively, then removes approved objects.
@@ -47,6 +47,9 @@ This document describes the dygo CLI command surface. Commands that are intentio
 - `dygo app` - Groups dygo app commands.
 - `dygo app list` - Lists discovered apps, versions, labels, and install locations.
 - `dygo app validate` - Validates app manifests, app paths, dependencies, and reserved app metadata.
+- `dygo app install <app>` - Validates a local App and its dependencies, then updates generated Hook and Job runner wiring. App source must already exist under `apps/` or `.dygo/apps/`; run `dygo db migrate` separately to change a database.
+- `dygo app install <app> --dry-run` - Prints the local runner change without writing.
+- `dygo app install <app> --yes` - Applies the local runner change without prompting.
 
 ## Entities
 
@@ -61,9 +64,6 @@ This document describes the dygo CLI command surface. Commands that are intentio
 ## Fixtures
 
 - `dygo fixture` - Groups app-owned fixture Record commands.
-- `dygo fixture apply` - Prints the fixture apply plan, prompts interactively, then applies app-owned fixture Records.
-- `dygo fixture apply --yes` - Applies app-owned fixture Records without an interactive prompt.
-- `dygo fixture apply --dry-run` - Prints the fixture apply plan without writing or prompting.
 - `dygo fixture validate` - Validates fixture files, match fields, dependencies, and references without connecting to the database when possible.
 - `dygo fixture export <app>/<entity>` - Prints the fixture export plan, reports unresolved link dependencies, prompts interactively, then writes fixture files.
 - `dygo fixture export <app>/<entity> --yes` - Exports selected Records without an interactive prompt.
@@ -157,9 +157,6 @@ Studio operators can cancel queued Job Executions and retry failed ones from Job
 
 - `dygo access` - Groups app access metadata commands.
 - `dygo access validate` - Validates `access/_roles.yml` and `access/<entity>.access.yml` files.
-- `dygo access apply` - Prints an access apply plan, prompts interactively, then syncs access files into Core role and permission Records.
-- `dygo access apply --yes` - Applies access metadata without an interactive prompt.
-- `dygo access apply --dry-run` - Prints the access apply plan without writing.
 - `dygo access list` - Lists discovered Entity access files grouped by contributor app.
 - `dygo access list <app>` - Lists Entity access files contributed by one app.
 - `dygo access show <app>/<entity>` - Prints resolved access metadata for one Entity.
@@ -170,7 +167,7 @@ Studio operators can cancel queued Job Executions and retry failed ones from Job
 - `dygo access export <target> --yes` - Exports access metadata without an interactive prompt.
 - `dygo access export <target> --dry-run` - Prints the access export plan without writing or prompting.
 
-`dygo access` owns app access metadata. Runtime access sync happens through `dygo access apply`. `dygo db prepare` runs access apply as part of first-time environment preparation.
+`dygo access` owns access validation, inspection, and export. `dygo db migrate` is the only command that applies access metadata to the database.
 
 ## Secrets
 

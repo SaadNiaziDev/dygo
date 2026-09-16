@@ -28,12 +28,14 @@ func (r MetadataReader) ListPages(ctx context.Context) ([]MetadataPage, error) {
 	if err := r.requireQueryer(); err != nil {
 		return nil, err
 	}
+	args := []any{}
+	predicate := AppRuntimePredicate(ctx, "a", &args)
 	rows, err := r.queryer.Query(ctx, `
 SELECT p.id, p.name, p.key, p.label, COALESCE(p.description, ''), COALESCE(p.icon, ''), p.path, p.renderer, p.options, a.name, a.label
 FROM "page" p
 JOIN "app" a ON a.id = p.app_id
-WHERE COALESCE(p.retired, false) = false
-ORDER BY a.name, p.key`)
+WHERE COALESCE(p.retired, false) = false AND `+predicate+`
+ORDER BY a.name, p.key`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query metadata pages: %w", err)
 	}
@@ -62,11 +64,13 @@ func (r MetadataReader) GetPage(ctx context.Context, appName string, pageKey str
 	}
 	var page MetadataPage
 	var options []byte
+	args := []any{appName, pageKey}
+	predicate := AppRuntimePredicate(ctx, "a", &args)
 	err := r.queryer.QueryRow(ctx, `
 SELECT p.id, p.name, p.key, p.label, COALESCE(p.description, ''), COALESCE(p.icon, ''), p.path, p.renderer, p.options, a.name, a.label
 FROM "page" p
 JOIN "app" a ON a.id = p.app_id
-WHERE a.name = $1 AND p.key = $2 AND COALESCE(p.retired, false) = false`, appName, pageKey).Scan(
+WHERE a.name = $1 AND p.key = $2 AND COALESCE(p.retired, false) = false AND `+predicate, args...).Scan(
 		&page.ID, &page.Name, &page.Key, &page.Label, &page.Description, &page.Icon, &page.Path, &page.Renderer, &options, &page.App.Name, &page.App.Label,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {

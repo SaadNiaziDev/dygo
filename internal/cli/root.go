@@ -26,6 +26,7 @@ import (
 	importsvc "github.com/hapyco/dygo/internal/imports"
 	"github.com/hapyco/dygo/internal/jobs/executionactions"
 	jobruntime "github.com/hapyco/dygo/internal/jobs/runtime"
+	"github.com/hapyco/dygo/internal/migration"
 	"github.com/hapyco/dygo/internal/permissions"
 	"github.com/hapyco/dygo/internal/recordsecret"
 	"github.com/hapyco/dygo/internal/secrets"
@@ -64,6 +65,8 @@ type databaseRunner interface {
 	Drop(context.Context, string) (db.DatabaseResult, error)
 }
 type schemaSyncRunner interface {
+	MigrationPlan(context.Context, string, string) (migration.Plan, error)
+	Migrate(context.Context, string, string, migration.Plan) (migration.Result, error)
 	ApplyPatches(context.Context, string, string, string, string) (db.PatchApplyResult, error)
 	PatchPlan(context.Context, string, string, string) (db.PatchPlan, error)
 	Plan(context.Context, string, string) (db.SchemaPlan, error)
@@ -137,7 +140,7 @@ func newCommandDependencies(options Options) (commandDependencies, error) {
 		return commandDependencies{}, fmt.Errorf("configure jobs: %w", err)
 	}
 	return commandDependencies{
-		serve: server.Serve, database: db.NewManager(migrator), sync: migrator, setup: defaultAdminSetupRunner{}, fixture: defaultFixtureRunner{recordHooks: recordHooks},
+		serve: server.Serve, database: db.NewManager(migrator), sync: projectMigrator{Migrator: migrator, lifecycle: migration.Runner{Migrator: migrator, RecordHooks: recordHooks, ValidateCode: migrationCodeValidator(recordHooks, jobRegistry)}}, setup: defaultAdminSetupRunner{}, fixture: defaultFixtureRunner{recordHooks: recordHooks},
 		access: defaultAccessRunner{}, recordHooks: recordHooks, actionRegistry: actionRegistry, jobRegistry: jobRegistry,
 	}, nil
 }
@@ -245,7 +248,7 @@ func newRootCommand(ctx context.Context, stdin io.Reader, stdout, stderr io.Writ
 	root.AddCommand(newSetupCommand(ctx, stdin, stdout, stderr, dependencies.setup))
 	root.AddCommand(newFixtureCommand(ctx, stdin, stdout, stderr, dependencies.fixture))
 	root.AddCommand(newAccessCommand(ctx, stdin, stdout, stderr, dependencies.access))
-	root.AddCommand(newAppCommand(stdout))
+	root.AddCommand(newAppCommand(stdin, stdout, stderr))
 	root.AddCommand(newEntityCommand(stdout))
 	root.AddCommand(newHookCommand(stdout))
 	root.AddCommand(newJobCommand(ctx, stdout))

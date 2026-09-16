@@ -57,8 +57,8 @@ func TestBuildMetadataRecords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildMetadataRecords() error = %v, want nil", err)
 	}
-	if len(records.Apps) != 1 || records.Apps[0].Name != "core" || records.Apps[0].Status != "active" {
-		t.Fatalf("app records = %+v, want active core app", records.Apps)
+	if len(records.Apps) != 1 || records.Apps[0].Name != "core" || records.Apps[0].Status != "installed" {
+		t.Fatalf("app records = %+v, want installed core app", records.Apps)
 	}
 	if len(records.Entities) != 1 || records.Entities[0].Name != "core.user" || records.Entities[0].Key != "user" || records.Entities[0].Slug == nil || *records.Entities[0].Slug != "user" || records.Entities[0].Icon != "user" || records.Entities[0].AppName != "core" || !records.Entities[0].IsSingle || !records.Entities[0].IsSystem {
 		t.Fatalf("entity records = %+v, want core/user", records.Entities)
