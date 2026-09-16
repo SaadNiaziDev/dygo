@@ -170,7 +170,7 @@ VALUES ($1, $2, $3, $4)
 ON CONFLICT (name) DO UPDATE
 SET label = EXCLUDED.label,
 	version = EXCLUDED.version,
-	status = EXCLUDED.status,
+	status = "app".status,
 	updated_at = now()
 RETURNING id`, app.Name, app.Label, app.Version, app.Status).Scan(&id); err != nil {
 			return metadataPersistResult{}, fmt.Errorf("persist app metadata %q: %w", app.Name, err)
@@ -525,7 +525,7 @@ func buildMetadataRecords(metadata metadataCatalog) (metadataRecordSet, error) {
 			Name:    app.Manifest.Name,
 			Label:   app.Manifest.Label,
 			Version: app.Manifest.Version,
-			Status:  corevalues.AppStatusActive,
+			Status:  corevalues.AppStatusInstalled,
 		})
 	}
 	for _, loaded := range metadata.Entities {

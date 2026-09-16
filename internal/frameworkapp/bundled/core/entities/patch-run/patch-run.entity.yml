@@ -1,5 +1,5 @@
 label: Patch Run
-description: Ledger entry for one successfully applied app patch.
+description: Ledger entry for an applied or deliberately baselined App patch.
 icon: git-pull-request-arrow
 is-system: true
 name:
@@ -34,6 +34,16 @@ fields:
       values:
         - pre-sync
         - post-sync
+
+  - name: outcome
+    label: Outcome
+    type: select
+    required: true
+    default: applied
+    options:
+      values:
+        - applied
+        - baselined
 
   - name: checksum
     label: Checksum

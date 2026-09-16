@@ -20,7 +20,8 @@ fields:
     label: Status
     type: select
     required: true
-    default: active
+    index: true
+    default: installed
     options:
       values:
         - installed

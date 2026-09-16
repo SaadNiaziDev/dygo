@@ -62,7 +62,7 @@ Create the configured database if it is missing:
 dygo db create
 ```
 
-Migrate an existing database. `db migrate` requires the configured database to exist, prints the full plan, prompts, then applies pre-sync patches, metadata schema sync, post-sync patches, and schema snapshot refresh.
+Migrate an existing database. `db migrate` requires the configured database to exist, prints the full plan, prompts, then applies App state, pre-sync patches, metadata, post-sync patches, access, Fixtures, and App activation in one transaction. It refreshes the schema snapshot after commit.
 
 ```sh
 dygo db migrate
@@ -75,7 +75,7 @@ dygo db migrate --yes
 
 `db migrate` does not create the database. If the database is missing, it reports that migration cannot continue.
 
-Prepare a usable environment. `db prepare` is the non-destructive bootstrap command. It creates the configured database if missing, then runs migration, access apply, and fixture apply:
+Prepare a usable environment. `db prepare` is the non-destructive bootstrap command. It creates the configured database if missing, then runs the same migration lifecycle:
 
 ```sh
 dygo db prepare
@@ -140,6 +140,8 @@ Job and Schedule files do not create per-Job tables. They sync into Core metadat
 
 During `dygo db migrate`, dygo loads every discovered App from `apps/` and `.dygo/apps/`, then creates or updates tables from each App's Entity metadata. In the framework repository, Core metadata comes from `apps/core/entities/`. In generated projects, it comes from tracked `.dygo/apps/core/entities/`. Core defines tables such as `app`, `activity`, `log`, `entity`, `field`, `index`, `constraint`, `job`, `job-execution`, `schedule`, `naming-series`, `patch-run`, `user`, `role`, `permission`, and `session`.
 
+New Apps enter the migration transaction as `installed` and become `active` only after every database step succeeds. Disabled Apps remain disabled. Runtime readers, routes, Jobs, and Schedules expose active Apps only; migration receives a narrow scope for Apps being installed. The persisted App version changes in the same transaction.
+
 Preview metadata sync:
 
 ```sh
@@ -166,7 +168,7 @@ Entity, Field, Index, and Constraint registry rows that are absent from source m
 
 File-backed Jobs whose `job.yml` was removed are marked retired, not deleted, so old Job Executions remain inspectable. File-backed Schedules removed from `_schedules.yml` are also marked retired instead of being deleted.
 
-App-owned access metadata and fixtures are not applied by `dygo db migrate`. Use `dygo access apply` and `dygo fixture apply` explicitly, or run `dygo db prepare` when preparing a full usable environment. See [Access](access.md) and [Fixtures](fixtures.md) for their file shapes.
+`dygo db migrate` applies access metadata and Fixtures after schema and patch work. Any failure rolls back schema, registry metadata, patch ledger rows, access Records, Fixture Records, and App state together. See [Access](access.md) and [Fixtures](fixtures.md) for their file shapes.
 
 The current sync path is intentionally additive. Removing fields, renaming fields, renaming tables, destructive type changes, and unsafe required/unique/check/foreign-key changes are not inferred automatically. Those cases need an explicit app patch or, for plain metadata-orphaned objects, an explicit schema prune.
 
@@ -180,7 +182,7 @@ dygo db migrate
 dygo db migrate --yes
 ```
 
-Patch apply records a Core `patch-run` ledger row only after a patch succeeds. `dygo db migrate` refreshes `db/schema.sql` after schema changes. dygo does not automate backups before patches yet; take and verify backups before applying patches to production.
+Patch apply records a Core `patch-run` ledger row inside the migration transaction. `dygo db migrate` refreshes `db/schema.sql` after commit. dygo does not automate backups before patches yet; take and verify backups before applying patches to production.
 
 There is no SQL migration file path or `migrations` table in this model. dygo compares metadata intent with the database shape and moves the database forward through metadata.
 

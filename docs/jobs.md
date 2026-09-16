@@ -273,7 +273,7 @@ Cancel is available while status is `queued`. Retry is available while status is
 `system-manager` can read Job and Job Execution Records and run `cancel` and `retry`. Apply Core access metadata after upgrade:
 
 ```sh
-dygo access apply --yes
+dygo db migrate --yes
 ```
 
 Administrator bypasses permission checks and can also run the actions.

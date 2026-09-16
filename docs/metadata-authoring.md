@@ -2,7 +2,7 @@
 
 dygo includes JSON Schemas for the YAML files that define apps, Entities, fixtures, Jobs, Schedules, patches, and project config.
 
-These schemas help editors and agents suggest valid keys and catch obvious shape mistakes while writing metadata. They are not the runtime source of truth. The Go validators behind `dygo app validate`, `dygo entity validate`, fixture apply, Job and Schedule loading, patch loading, and config loading remain authoritative.
+These schemas help editors and agents suggest valid keys and catch obvious shape mistakes while writing metadata. They are not the runtime source of truth. The Go validators behind `dygo app validate`, `dygo entity validate`, Fixture migration, Job and Schedule loading, patch loading, and config loading remain authoritative.
 
 ## Files
 

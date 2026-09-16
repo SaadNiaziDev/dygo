@@ -50,6 +50,7 @@ List discovered apps from the current project:
 ```sh
 dygo app list
 dygo app validate
+dygo app install dygo-crm
 dygo entity list
 dygo entity validate
 ```
@@ -66,4 +67,4 @@ The app manifest is currently a framework-owned metadata input.
 
 The manifest does not include an app `type` field. Core and Studio bootstrap rules are handled by framework code.
 
-The manifest does not fetch, install, migrate, or write to the database. It only gives dygo a validated description of app metadata on disk.
+`dygo app install <app>` does not fetch remote source. It validates source already present under `apps/` or `.dygo/apps/`, resolves its dependency closure, and updates generated Hook and Job runner wiring. It never connects to a database. Run `dygo db migrate` explicitly to apply App metadata, patches, access, Fixtures, and lifecycle state.

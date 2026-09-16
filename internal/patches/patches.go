@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/hapyco/dygo/internal/app/manifest"
+	"github.com/hapyco/dygo/internal/app/registry"
 	"github.com/hapyco/dygo/internal/yamlmeta"
 	"gopkg.in/yaml.v3"
 )
@@ -24,6 +25,10 @@ const (
 
 	PhasePreSync  = "pre-sync"
 	PhasePostSync = "post-sync"
+
+	RunOnMigrate = "migrate"
+	RunOnInstall = "install"
+	RunOnBoth    = "both"
 )
 
 // Patch is one v1 patch document.
@@ -32,6 +37,7 @@ type Patch struct {
 	Version     int
 	ID          string
 	Phase       string
+	RunOn       string
 	Description string
 	Operations  []Operation
 	Line        int
@@ -57,7 +63,7 @@ type LoadedPatch struct {
 
 // Discover loads and validates patch files from each app's patches path.
 func Discover(apps []manifest.LoadedApp) ([]LoadedPatch, error) {
-	orderedApps, err := orderApps(apps)
+	orderedApps, err := registry.DependencyOrder(apps)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +155,7 @@ func Decode(data []byte) (Patch, error) {
 		return Patch{}, fmt.Errorf("patch document must be a non-empty mapping")
 	}
 
-	patch := Patch{Line: document.Line}
+	patch := Patch{Line: document.Line, RunOn: RunOnMigrate}
 	seen := map[string]bool{}
 	for i := 0; i < len(document.Content); i += 2 {
 		key := document.Content[i]
@@ -180,6 +186,12 @@ func Decode(data []byte) (Patch, error) {
 				return Patch{}, err
 			}
 			patch.Phase = phase
+		case "run-on":
+			value, err := scalarString(value, "run-on")
+			if err != nil {
+				return Patch{}, err
+			}
+			patch.RunOn = value
 		case "description":
 			description, err := scalarString(value, "description")
 			if err != nil {
@@ -289,6 +301,12 @@ func validatePatch(patch Patch, seen map[string]bool) error {
 	if patch.Phase != PhasePreSync && patch.Phase != PhasePostSync {
 		return fmt.Errorf("patch phase must be %q or %q", PhasePreSync, PhasePostSync)
 	}
+	if patch.RunOn != RunOnMigrate && patch.RunOn != RunOnInstall && patch.RunOn != RunOnBoth {
+		return fmt.Errorf("patch run-on must be %q, %q, or %q", RunOnMigrate, RunOnInstall, RunOnBoth)
+	}
+	if patch.RunOn != RunOnMigrate && patch.Phase != PhasePostSync {
+		return fmt.Errorf("patch run-on %q requires post-sync phase", patch.RunOn)
+	}
 	if !seen["description"] || strings.TrimSpace(patch.Description) == "" {
 		return fmt.Errorf("patch description is required")
 	}
@@ -301,78 +319,6 @@ func validatePatch(patch Patch, seen map[string]bool) error {
 		}
 	}
 	return nil
-}
-
-func orderApps(apps []manifest.LoadedApp) ([]manifest.LoadedApp, error) {
-	byName := map[string]manifest.LoadedApp{}
-	for _, app := range apps {
-		name := app.Manifest.Name
-		if strings.TrimSpace(name) == "" {
-			return nil, fmt.Errorf("patch app name is required")
-		}
-		if previous, ok := byName[name]; ok {
-			return nil, fmt.Errorf("duplicate app %q in %s and %s", name, previous.ManifestPath, app.ManifestPath)
-		}
-		byName[name] = app
-	}
-
-	indegree := map[string]int{}
-	dependents := map[string][]string{}
-	for _, app := range apps {
-		name := app.Manifest.Name
-		indegree[name] = 0
-	}
-	for _, app := range apps {
-		name := app.Manifest.Name
-		seenDependencies := map[string]struct{}{}
-		for _, dependency := range app.Manifest.Dependencies {
-			if _, ok := byName[dependency]; !ok {
-				return nil, fmt.Errorf("app %q depends on unknown app %q", name, dependency)
-			}
-			if _, ok := seenDependencies[dependency]; ok {
-				continue
-			}
-			seenDependencies[dependency] = struct{}{}
-			indegree[name]++
-			dependents[dependency] = append(dependents[dependency], name)
-		}
-	}
-	for dependency := range dependents {
-		sort.Strings(dependents[dependency])
-	}
-
-	var ready []string
-	for name, degree := range indegree {
-		if degree == 0 {
-			ready = append(ready, name)
-		}
-	}
-	sort.Strings(ready)
-
-	ordered := make([]manifest.LoadedApp, 0, len(apps))
-	for len(ready) > 0 {
-		name := ready[0]
-		ready = ready[1:]
-		ordered = append(ordered, byName[name])
-		for _, dependent := range dependents[name] {
-			indegree[dependent]--
-			if indegree[dependent] == 0 {
-				ready = append(ready, dependent)
-			}
-		}
-		sort.Strings(ready)
-	}
-	if len(ordered) != len(apps) {
-		var cycle []string
-		for name, degree := range indegree {
-			if degree > 0 {
-				cycle = append(cycle, name)
-			}
-		}
-		sort.Strings(cycle)
-		return nil, fmt.Errorf("app dependency cycle among %s", strings.Join(cycle, ", "))
-	}
-	return ordered, nil
 }
 
 func isPatchFilename(name string) bool {

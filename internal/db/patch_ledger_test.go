@@ -15,8 +15,8 @@ func TestPatchLedgerListPatchRuns(t *testing.T) {
 	appliedAt := time.Date(2026, 5, 15, 10, 0, 0, 0, time.UTC)
 	queryer := &fakePatchLedgerQueryer{
 		rows: []pgx.Rows{newFakeRows([][]any{
-			{"crm", "0001_rename_email", "apps/crm/patches/0001_rename_email.yml", PatchPhasePreSync, "sha256:a", appliedAt, "0.1.0"},
-			{"sales", "0001_backfill", "apps/sales/patches/0001_backfill.yml", PatchPhasePostSync, "sha256:b", appliedAt.Add(time.Hour), ""},
+			{"crm", "0001_rename_email", "apps/crm/patches/0001_rename_email.yml", PatchPhasePreSync, "sha256:a", appliedAt, "0.1.0", PatchOutcomeApplied},
+			{"sales", "0001_backfill", "apps/sales/patches/0001_backfill.yml", PatchPhasePostSync, "sha256:b", appliedAt.Add(time.Hour), "", PatchOutcomeApplied},
 		})},
 	}
 
@@ -38,7 +38,7 @@ func TestPatchLedgerListPatchRuns(t *testing.T) {
 func TestPatchLedgerGetPatchRun(t *testing.T) {
 	appliedAt := time.Date(2026, 5, 15, 10, 0, 0, 0, time.UTC)
 	queryer := &fakePatchLedgerQueryer{
-		row: []pgx.Row{newFakeRow("crm", "0001_rename_email", "apps/crm/patches/0001_rename_email.yml", PatchPhasePreSync, "sha256:a", appliedAt, "0.1.0")},
+		row: []pgx.Row{newFakeRow("crm", "0001_rename_email", "apps/crm/patches/0001_rename_email.yml", PatchPhasePreSync, "sha256:a", appliedAt, "0.1.0", PatchOutcomeApplied)},
 	}
 
 	run, err := NewPatchLedger(queryer).GetPatchRun(context.Background(), "crm", "0001_rename_email")
@@ -101,7 +101,7 @@ func TestPatchLedgerRecordPatchRunInserts(t *testing.T) {
 func TestPatchLedgerRecordPatchRunRejectsAlreadyApplied(t *testing.T) {
 	appliedAt := time.Date(2026, 5, 15, 10, 0, 0, 0, time.UTC)
 	queryer := &fakePatchLedgerQueryer{
-		row: []pgx.Row{newFakeRow("crm", "0001_rename_email", "apps/crm/patches/0001_rename_email.yml", PatchPhasePreSync, "sha256:a", appliedAt, "0.1.0")},
+		row: []pgx.Row{newFakeRow("crm", "0001_rename_email", "apps/crm/patches/0001_rename_email.yml", PatchPhasePreSync, "sha256:a", appliedAt, "0.1.0", PatchOutcomeApplied)},
 	}
 
 	err := NewPatchLedger(queryer).RecordPatchRun(context.Background(), PatchRun{
@@ -124,7 +124,7 @@ func TestPatchLedgerRecordPatchRunRejectsAlreadyApplied(t *testing.T) {
 func TestPatchLedgerRecordPatchRunRejectsChecksumMismatch(t *testing.T) {
 	appliedAt := time.Date(2026, 5, 15, 10, 0, 0, 0, time.UTC)
 	queryer := &fakePatchLedgerQueryer{
-		row: []pgx.Row{newFakeRow("crm", "0001_rename_email", "apps/crm/patches/0001_rename_email.yml", PatchPhasePreSync, "sha256:old", appliedAt, "0.1.0")},
+		row: []pgx.Row{newFakeRow("crm", "0001_rename_email", "apps/crm/patches/0001_rename_email.yml", PatchPhasePreSync, "sha256:old", appliedAt, "0.1.0", PatchOutcomeApplied)},
 	}
 
 	err := NewPatchLedger(queryer).RecordPatchRun(context.Background(), PatchRun{

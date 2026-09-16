@@ -90,56 +90,7 @@ func newAccessValidateCommand(ctx context.Context, stdout io.Writer, runner acce
 }
 
 func newAccessApplyCommand(ctx context.Context, stdin io.Reader, stdout, stderr io.Writer, runner accessRunner) *cobra.Command {
-	envName := string(secrets.EnvironmentDevelopment)
-	yes := false
-	dryRun := false
-
-	cmd := &cobra.Command{
-		Use:   "apply",
-		Short: "Apply app access metadata to the database",
-		Args:  cobra.NoArgs,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			env, root, databaseURL, err := databaseInputs(envName)
-			if err != nil {
-				return err
-			}
-			plan, err := runner.ApplyPlan(ctx, root, databaseURL)
-			if err != nil {
-				return fmt.Errorf("plan access: %w", err)
-			}
-			if err := writeAccessPlan(stdout, "access apply plan", env, plan); err != nil {
-				return err
-			}
-			if dryRun {
-				if _, err := fmt.Fprintln(stdout, "dry-run: no access records will be written"); err != nil {
-					return fmt.Errorf("write access dry-run output: %w", err)
-				}
-				return nil
-			}
-			if !yes {
-				ok, err := confirm(stdin, stderr, "Apply access metadata? [y/N] ")
-				if err != nil {
-					return err
-				}
-				if !ok {
-					return fmt.Errorf("access apply canceled")
-				}
-			}
-			result, err := runner.Apply(ctx, root, databaseURL)
-			if err != nil {
-				return fmt.Errorf("apply access metadata: %w", err)
-			}
-			if _, err := fmt.Fprintf(stdout, "access applied: %d roles, %d permissions (%s)\n", result.Roles, result.Permissions, env); err != nil {
-				return fmt.Errorf("write access apply output: %w", err)
-			}
-			return nil
-		},
-	}
-
-	cmd.Flags().StringVar(&envName, "env", envName, "Environment: development, staging, or production")
-	cmd.Flags().BoolVar(&yes, "yes", yes, "Apply access metadata without an interactive prompt")
-	cmd.Flags().BoolVar(&dryRun, "dry-run", dryRun, "Print the access apply plan without writing records")
-	return cmd
+	return retiredApplyCommand("access")
 }
 
 func newAccessListCommand(ctx context.Context, stdout io.Writer, runner accessRunner) *cobra.Command {

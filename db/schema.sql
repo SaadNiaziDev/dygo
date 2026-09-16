@@ -74,7 +74,7 @@ CREATE TABLE public.app (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     label text NOT NULL,
     version text NOT NULL,
-    status text DEFAULT 'active'::text NOT NULL,
+    status text DEFAULT 'installed'::text NOT NULL,
     CONSTRAINT app_status_check CHECK ((status = ANY (ARRAY['installed'::text, 'active'::text, 'disabled'::text, 'pending-install'::text, 'pending-upgrade'::text, 'failed'::text])))
 );
 
@@ -523,9 +523,11 @@ CREATE TABLE public.patch_run (
     patch_id text NOT NULL,
     path text NOT NULL,
     phase text NOT NULL,
+    outcome text DEFAULT 'applied'::text NOT NULL,
     checksum text NOT NULL,
     applied_at timestamp with time zone NOT NULL,
     dygo_version text,
+    CONSTRAINT patch_run_outcome_check CHECK ((outcome = ANY (ARRAY['applied'::text, 'baselined'::text]))),
     CONSTRAINT patch_run_phase_check CHECK ((phase = ANY (ARRAY['pre-sync'::text, 'post-sync'::text])))
 );
 
@@ -1165,6 +1167,13 @@ ALTER TABLE ONLY public.user_role
 
 ALTER TABLE ONLY public.user_role
     ADD CONSTRAINT user_role_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: app_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX app_status_idx ON public.app USING btree (status);
 
 
 --

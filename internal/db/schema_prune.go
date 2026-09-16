@@ -100,6 +100,9 @@ func ApplySchemaPrunePlan(ctx context.Context, pool *pgxpool.Pool, plan SchemaPr
 		return SchemaPruneResult{}, fmt.Errorf("begin schema prune transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
+	if err := LockLifecycle(ctx, tx); err != nil {
+		return SchemaPruneResult{}, fmt.Errorf("lock schema lifecycle: %w", err)
+	}
 
 	if err := executeSchemaPrunePlan(ctx, tx, plan); err != nil {
 		return SchemaPruneResult{}, err

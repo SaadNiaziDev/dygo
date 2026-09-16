@@ -18,6 +18,7 @@ import (
 	"github.com/hapyco/dygo/internal/fixtures"
 	recordhooks "github.com/hapyco/dygo/internal/hooks"
 	jobruntime "github.com/hapyco/dygo/internal/jobs/runtime"
+	"github.com/hapyco/dygo/internal/migration"
 	"github.com/hapyco/dygo/internal/permissions"
 	"github.com/hapyco/dygo/internal/secrets"
 	"github.com/hapyco/dygo/internal/server"
@@ -376,129 +377,19 @@ func TestSetupCommandReturnsRunnerError(t *testing.T) {
 	}
 }
 
-func TestFixtureApplyCommandDefaultsToDevelopment(t *testing.T) {
+func TestFixtureApplyDirectsDatabaseWritesToMigrate(t *testing.T) {
 	root := t.TempDir()
 	writeCLIProjectRoot(t, root)
-	writeCLIConfig(t, root)
-	const databaseURL = "postgres://user:secret-password@localhost:5432/dygo"
-	writeCLIDatabaseSecret(t, root, secrets.EnvironmentDevelopment, databaseURL)
 	t.Chdir(root)
 
-	fake := &fakeFixtureRunner{
-		plan:   fixturePlan(2, 3),
-		result: fixtures.Result{Created: 3, Updated: 2},
-	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	err := runWithServicesAndSetupAndFixtures(context.Background(), []string{"fixture", "apply", "--yes"}, strings.NewReader(""), &stdout, &stderr, noopServeRunner, noopDatabaseRunner(), &fakeSchemaSyncRunner{}, &fakeAdminSetupRunner{}, fake)
-	if err != nil {
-		t.Fatalf("Run(fixture apply) error = %v, want nil", err)
-	}
-	wantStdout := "fixture apply plan (development)\nfiles: 2\nrecords: 3\nfixtures applied: 3 created, 2 updated (development)\n"
-	if stdout.String() != wantStdout {
-		t.Fatalf("fixture apply stdout = %q, want %q", stdout.String(), wantStdout)
-	}
-	if stderr.String() != "" {
-		t.Fatalf("fixture apply stderr = %q, want empty", stderr.String())
-	}
-	if fake.root != root || fake.databaseURL != databaseURL {
-		t.Fatalf("fixture runner root/url = %q/%q, want %q/%q", fake.root, fake.databaseURL, root, databaseURL)
-	}
-	if fake.planCalls != 1 || fake.calls != 1 {
-		t.Fatalf("fixture runner plan/apply calls = %d/%d, want 1/1", fake.planCalls, fake.calls)
-	}
-}
-
-func TestFixtureApplyCommandUsesSelectedEnvironment(t *testing.T) {
-	root := t.TempDir()
-	writeCLIProjectRoot(t, root)
-	writeCLIConfig(t, root)
-	const databaseURL = "postgres://staging-user:secret-password@localhost:5432/dygo_staging"
-	writeCLIDatabaseSecret(t, root, secrets.EnvironmentStaging, databaseURL)
-	t.Chdir(root)
-
-	fake := &fakeFixtureRunner{plan: fixturePlan(1, 1)}
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	err := runWithServicesAndSetupAndFixtures(context.Background(), []string{"fixture", "apply", "--env", "staging"}, strings.NewReader("yes\n"), &stdout, &stderr, noopServeRunner, noopDatabaseRunner(), &fakeSchemaSyncRunner{}, &fakeAdminSetupRunner{}, fake)
-	if err != nil {
-		t.Fatalf("Run(fixture apply --env staging) error = %v, want nil", err)
-	}
-	wantStdout := "fixture apply plan (staging)\nfiles: 1\nrecords: 1\nfixtures applied: 0 created, 0 updated (staging)\n"
-	if stdout.String() != wantStdout {
-		t.Fatalf("fixture apply stdout = %q, want %q", stdout.String(), wantStdout)
-	}
-	if stderr.String() != "Apply fixture records? [y/N] " {
-		t.Fatalf("fixture apply stderr = %q, want prompt", stderr.String())
-	}
-	if fake.databaseURL != databaseURL {
-		t.Fatalf("fixture runner URL = %q, want staging URL %q", fake.databaseURL, databaseURL)
-	}
-}
-
-func TestFixtureApplyDryRunDoesNotRequireDatabaseSecret(t *testing.T) {
-	root := t.TempDir()
-	writeCLIProjectRoot(t, root)
-	writeCLIConfig(t, root)
-	writeCLISecretsLayout(t, root)
-	t.Chdir(root)
-
-	fake := &fakeFixtureRunner{plan: fixturePlan(1, 2)}
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	err := runWithServicesAndSetupAndFixtures(context.Background(), []string{"fixture", "apply", "--dry-run"}, strings.NewReader(""), &stdout, &stderr, noopServeRunner, noopDatabaseRunner(), &fakeSchemaSyncRunner{}, &fakeAdminSetupRunner{}, fake)
-	if err != nil {
-		t.Fatalf("Run(fixture apply --dry-run) error = %v, want nil", err)
-	}
-	wantStdout := "fixture apply plan (development)\nfiles: 1\nrecords: 2\ndry-run: no records will be written\n"
-	if stdout.String() != wantStdout {
-		t.Fatalf("fixture apply stdout = %q, want %q", stdout.String(), wantStdout)
-	}
-	if fake.calls != 0 {
-		t.Fatalf("fixture runner calls = %d, want 0", fake.calls)
-	}
-}
-
-func TestFixtureApplyCommandRequiresDatabaseSecretAfterConfirmation(t *testing.T) {
-	root := t.TempDir()
-	writeCLIProjectRoot(t, root)
-	writeCLIConfig(t, root)
-	writeCLISecretsLayout(t, root)
-	t.Chdir(root)
-
-	fake := &fakeFixtureRunner{plan: fixturePlan(1, 1)}
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	err := runWithServicesAndSetupAndFixtures(context.Background(), []string{"fixture", "apply", "--yes"}, strings.NewReader(""), &stdout, &stderr, noopServeRunner, noopDatabaseRunner(), &fakeSchemaSyncRunner{}, &fakeAdminSetupRunner{}, fake)
+	err := runWithServicesAndSetupAndFixtures(context.Background(), []string{"fixture", "apply", "--env", "staging"}, strings.NewReader(""), &stdout, &stderr, noopServeRunner, noopDatabaseRunner(), &fakeSchemaSyncRunner{}, &fakeAdminSetupRunner{}, &fakeFixtureRunner{})
 	if err == nil {
-		t.Fatal("Run(fixture apply --yes) error = nil, want missing secret error")
+		t.Fatal("Run(fixture apply) error = nil, want migration guidance")
 	}
-	for _, want := range []string{`read database secret "DATABASE_URL" for development`, `secret "DATABASE_URL" is not defined`} {
-		if !strings.Contains(err.Error(), want) {
-			t.Fatalf("Run(fixture apply --yes) error = %q, want substring %q", err.Error(), want)
-		}
-	}
-	if fake.calls != 0 {
-		t.Fatalf("fixture runner apply calls = %d, want 0", fake.calls)
-	}
-}
-
-func TestFixtureApplyCommandReturnsRunnerError(t *testing.T) {
-	root := t.TempDir()
-	writeCLIProjectRoot(t, root)
-	writeCLIConfig(t, root)
-	writeCLIDatabaseSecret(t, root, secrets.EnvironmentDevelopment, "postgres://user:secret-password@localhost:5432/dygo")
-	t.Chdir(root)
-
-	fake := &fakeFixtureRunner{plan: fixturePlan(1, 1), err: errors.New("invalid fixtures")}
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	err := runWithServicesAndSetupAndFixtures(context.Background(), []string{"fixture", "apply", "--yes"}, strings.NewReader(""), &stdout, &stderr, noopServeRunner, noopDatabaseRunner(), &fakeSchemaSyncRunner{}, &fakeAdminSetupRunner{}, fake)
-	if err == nil {
-		t.Fatal("Run(fixture apply) error = nil, want runner error")
-	}
-	if !strings.Contains(err.Error(), "apply fixture records: invalid fixtures") {
-		t.Fatalf("Run(fixture apply) error = %q, want apply context", err.Error())
+	if !strings.Contains(err.Error(), "dygo fixture apply has moved into dygo db migrate; run dygo db migrate --env staging") {
+		t.Fatalf("Run(fixture apply) error = %q, want migration guidance", err.Error())
 	}
 }
 
@@ -1111,7 +1002,7 @@ func TestDBDropCommandPromptsBeforeDrop(t *testing.T) {
 	}
 }
 
-func TestDBMigrateDryRunPlansSchemaOnly(t *testing.T) {
+func TestDBMigrateDryRunIncludesFixtures(t *testing.T) {
 	root := t.TempDir()
 	writeCLIProjectRoot(t, root)
 	writeCLIConfig(t, root)
@@ -1136,10 +1027,10 @@ func TestDBMigrateDryRunPlansSchemaOnly(t *testing.T) {
 			t.Fatalf("db migrate dry-run stdout = %q, want substring %q", stdout.String(), want)
 		}
 	}
-	if strings.Contains(stdout.String(), "fixtures:") {
+	if !strings.Contains(stdout.String(), "fixtures:") {
 		t.Fatalf("db migrate dry-run stdout = %q, did not expect fixtures", stdout.String())
 	}
-	if fakeSync.patchPlanCalls != 2 || fakeSync.planCalls != 1 || fakeSync.calls != 0 || fakeFixture.planCalls != 0 || fakeFixture.calls != 0 {
+	if fakeSync.patchPlanCalls != 2 || fakeSync.planCalls != 1 || fakeSync.calls != 0 || fakeFixture.planCalls != 1 || fakeFixture.calls != 0 {
 		t.Fatalf("plan/apply calls = patchPlan %d plan %d sync %d fixturePlan %d fixtureApply %d, want schema dry-run only", fakeSync.patchPlanCalls, fakeSync.planCalls, fakeSync.calls, fakeFixture.planCalls, fakeFixture.calls)
 	}
 	if fakeDB.operations[0] != "exists" {
@@ -1175,10 +1066,10 @@ func TestDBMigrateYesAppliesSchemaOnly(t *testing.T) {
 			t.Fatalf("db migrate stdout = %q, want substring %q", stdout.String(), want)
 		}
 	}
-	if strings.Contains(stdout.String(), "fixture records:") {
+	if !strings.Contains(stdout.String(), "fixture records:") {
 		t.Fatalf("db migrate stdout = %q, did not expect fixtures", stdout.String())
 	}
-	if fakeSync.patchApplyCalls != 2 || fakeSync.calls != 1 || fakeFixture.calls != 0 {
+	if fakeSync.patchApplyCalls != 2 || fakeSync.calls != 1 || fakeFixture.calls != 1 {
 		t.Fatalf("apply calls = patch %d sync %d fixture %d, want schema workflow", fakeSync.patchApplyCalls, fakeSync.calls, fakeFixture.calls)
 	}
 	if fakeDB.operations[0] != "exists" {
@@ -1195,7 +1086,7 @@ func TestDBMigrateRunsPendingPreSyncPatchBeforeSchemaBlockers(t *testing.T) {
 	t.Chdir(root)
 
 	fakeSync := &fakeSchemaSyncRunner{
-		patchPlan: db.PatchPlan{Pending: []db.PlannedPatch{{AppName: "core", PatchID: "001_checks"}}},
+		patchPlan: db.PatchPlan{Pending: []db.PlannedPatch{{AppName: "core", PatchID: "001_checks"}}, UnsimulatedSQL: true},
 		plan: db.SchemaPlan{Diagnostics: []db.SchemaDiagnostic{{
 			Classification: db.SchemaDiagnosticUnsafe,
 			Table:          "activity",
@@ -1305,44 +1196,14 @@ func TestDBMigrateExistenceErrorsAreSanitized(t *testing.T) {
 	}
 }
 
-func TestPlanDBPreparationUsesDBAwareAccessPlan(t *testing.T) {
-	fakeAccess := &fakeAccessRunner{
-		applyPlan: access.Plan{
-			Roles:    []access.Role{{Name: "db-role"}},
-			Policies: []access.PolicyFile{{}},
-			Grants:   []access.Grant{{}, {}},
-		},
-	}
-	plan, err := planDBPreparation(context.Background(), &fakeSchemaSyncRunner{}, &fakeFixtureRunner{plan: fixturePlan(1, 2)}, fakeAccess, "/tmp/project", "postgres://localhost/dygo")
+func TestDBPreparationUsesCompleteMigrationPlan(t *testing.T) {
+	fake := &fakeSchemaSyncRunner{fixture: &fakeFixtureRunner{plan: fixturePlan(1, 2)}, access: &fakeAccessRunner{plan: access.Plan{Roles: []access.Role{{Name: "reader"}}}}}
+	plan, err := planDBPreparation(context.Background(), fake, nil, nil, "/tmp/project", "unused")
 	if err != nil {
-		t.Fatalf("planDBPreparation() error = %v, want nil", err)
+		t.Fatal(err)
 	}
-	if plan.Access.Roles != 1 || plan.Access.Policies != 1 || plan.Access.Permissions != 2 {
-		t.Fatalf("access summary = %+v, want DB-aware counts", plan.Access)
-	}
-	if fakeAccess.applyPlanCalls != 1 || fakeAccess.planCalls != 0 {
-		t.Fatalf("access plan calls = apply %d file %d, want DB-aware only", fakeAccess.applyPlanCalls, fakeAccess.planCalls)
-	}
-}
-
-func TestPlanDBPreparationFallsBackToFileAccessPlan(t *testing.T) {
-	fakeAccess := &fakeAccessRunner{
-		applyPlanErr: errors.New("role table missing"),
-		plan: access.Plan{
-			Roles:    []access.Role{{Name: "file-role"}},
-			Policies: []access.PolicyFile{{}},
-			Grants:   []access.Grant{{}},
-		},
-	}
-	plan, err := planDBPreparation(context.Background(), &fakeSchemaSyncRunner{}, &fakeFixtureRunner{}, fakeAccess, "/tmp/project", "postgres://localhost/dygo")
-	if err != nil {
-		t.Fatalf("planDBPreparation() error = %v, want nil", err)
-	}
-	if plan.Access.Roles != 1 || plan.Access.Policies != 1 || plan.Access.Permissions != 1 {
-		t.Fatalf("access summary = %+v, want file fallback counts", plan.Access)
-	}
-	if fakeAccess.applyPlanCalls != 1 || fakeAccess.planCalls != 1 {
-		t.Fatalf("access plan calls = apply %d file %d, want fallback", fakeAccess.applyPlanCalls, fakeAccess.planCalls)
+	if plan.Access.Roles != 1 || plan.Fixtures.RecordCount() != 2 {
+		t.Fatalf("incomplete preparation plan: %+v", plan)
 	}
 }
 
@@ -2678,8 +2539,14 @@ func noopDatabaseRunner() *fakeDatabaseRunner {
 
 func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, serve serveRunner, checkDatabase databaseChecker) error {
 	migrator := db.NewMigrator()
+	sync := projectMigrator{
+		Migrator: migrator,
+		lifecycle: migration.Runner{
+			Migrator: migrator,
+		},
+	}
 	return execute(ctx, args, stdin, stdout, stderr, commandDependencies{
-		serve: serve, database: checkBackedDatabaseRunner{check: checkDatabase, manager: db.NewManager(migrator)}, sync: migrator,
+		serve: serve, database: checkBackedDatabaseRunner{check: checkDatabase, manager: db.NewManager(migrator)}, sync: sync,
 		setup: defaultAdminSetupRunner{}, fixture: defaultFixtureRunner{}, access: defaultAccessRunner{},
 	})
 }
@@ -2697,6 +2564,10 @@ func runWithServicesAndSetupAndFixtures(ctx context.Context, args []string, stdi
 }
 
 func runWithServicesAndSetupAndFixturesAndAccessAndHooks(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, serve serveRunner, database databaseRunner, sync schemaSyncRunner, setup adminSetupRunner, fixture fixtureRunner, access accessRunner, recordHooks *db.RecordHookRegistry, actionRegistry *actionruntime.Registry, jobRegistry *jobruntime.Registry) error {
+	if fake, ok := sync.(*fakeSchemaSyncRunner); ok {
+		fake.fixture = fixture
+		fake.access = access
+	}
 	return execute(ctx, args, stdin, stdout, stderr, commandDependencies{
 		serve: serve, database: database, sync: sync, setup: setup, fixture: fixture, access: access,
 		recordHooks: recordHooks, actionRegistry: actionRegistry, jobRegistry: jobRegistry,
@@ -2717,7 +2588,7 @@ func runWithOptionsForTest(ctx context.Context, args []string, stdin io.Reader, 
 	if err != nil {
 		return err
 	}
-	return runWithServicesAndSetupAndFixturesAndAccessAndHooks(ctx, args, stdin, stdout, stderr, serve, noopDatabaseRunner(), migrator, &fakeAdminSetupRunner{}, &fakeFixtureRunner{}, defaultAccessRunner{}, recordHooks, actionRegistry, jobRegistry)
+	return runWithServicesAndSetupAndFixturesAndAccessAndHooks(ctx, args, stdin, stdout, stderr, serve, noopDatabaseRunner(), projectMigrator{Migrator: migrator, lifecycle: migration.Runner{Migrator: migrator}}, &fakeAdminSetupRunner{}, &fakeFixtureRunner{}, defaultAccessRunner{}, recordHooks, actionRegistry, jobRegistry)
 }
 
 func recordhooksForTest(registrars []dygo.RecordHookRegistrar) (*db.RecordHookRegistry, error) {
@@ -2991,6 +2862,8 @@ func (r *fakeDatabaseRunner) Drop(_ context.Context, databaseURL string) (db.Dat
 }
 
 type fakeSchemaSyncRunner struct {
+	fixture               fixtureRunner
+	access                accessRunner
 	result                db.SchemaSyncResult
 	err                   error
 	patchApplyResult      db.PatchApplyResult
@@ -3116,4 +2989,52 @@ func writeEditorScript(t *testing.T, root string, body string) string {
 		t.Fatalf("WriteFile(editor) error = %v", err)
 	}
 	return path
+}
+
+func (r *fakeSchemaSyncRunner) MigrationPlan(ctx context.Context, root, url string) (migration.Plan, error) {
+	p := migration.Plan{}
+	var err error
+	p.PreSync, err = r.PatchPlan(ctx, root, url, db.PatchPhasePreSync)
+	if err != nil {
+		return p, err
+	}
+	p.SchemaDeferred = p.PreSync.UnsimulatedSQL
+	p.Schema, err = r.Plan(ctx, root, url)
+	if err != nil {
+		return p, err
+	}
+	p.PostSync, err = r.PatchPlan(ctx, root, url, db.PatchPhasePostSync)
+	if err != nil {
+		return p, err
+	}
+	if r.fixture != nil {
+		p.Fixtures, err = r.fixture.Plan(ctx, root)
+		if err != nil {
+			return p, err
+		}
+	}
+	if r.access != nil {
+		p.Access, err = r.access.Plan(ctx, root, nil)
+	}
+	return p, err
+}
+func (r *fakeSchemaSyncRunner) Migrate(ctx context.Context, root, url string, plan migration.Plan) (migration.Result, error) {
+	result := migration.Result{}
+	var err error
+	result.PreSync, err = r.ApplyPatches(ctx, root, url, db.PatchPhasePreSync, currentVersion())
+	if err != nil {
+		return result, err
+	}
+	result.Schema, err = r.Sync(ctx, root, url)
+	if err != nil {
+		return result, err
+	}
+	result.PostSync, err = r.ApplyPatches(ctx, root, url, db.PatchPhasePostSync, currentVersion())
+	if err != nil {
+		return result, err
+	}
+	if r.fixture != nil {
+		result.Fixtures, err = r.fixture.Apply(ctx, root, url)
+	}
+	return result, err
 }

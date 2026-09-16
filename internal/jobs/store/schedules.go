@@ -85,7 +85,10 @@ func (s Store) NextScheduleRunAt(ctx context.Context, queueNames []string, now t
 SELECT MIN(s.next_run_at)
 FROM "schedule" s
 JOIN "job" j ON j.id = s.job_id
-WHERE s.enabled = true
+JOIN "app" a ON a.id = s.app_id
+JOIN "app" ja ON ja.id = j.app_id
+WHERE a.status = 'active' AND ja.status = 'active'
+  AND s.enabled = true
   AND s.retired = false
   AND s.next_run_at IS NOT NULL
   AND j.queue = ANY($1)`, queueNames).Scan(&next); err != nil {
@@ -140,7 +143,8 @@ FROM "schedule" s
 JOIN "app" a ON a.id = s.app_id
 JOIN "job" j ON j.id = s.job_id
 JOIN "app" ja ON ja.id = j.app_id
-WHERE s.enabled = true
+WHERE a.status = 'active' AND ja.status = 'active'
+  AND s.enabled = true
   AND s.retired = false
   AND s.next_run_at IS NOT NULL
   AND s.next_run_at <= $1

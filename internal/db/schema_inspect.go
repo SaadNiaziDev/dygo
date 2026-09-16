@@ -6,8 +6,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 )
+
+type SchemaQueryer interface {
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
 
 // LiveSchema is the inspected PostgreSQL public schema.
 type LiveSchema struct {
@@ -43,7 +48,7 @@ type liveConstraint struct {
 }
 
 // InspectLiveSchema reads the PostgreSQL public schema.
-func InspectLiveSchema(ctx context.Context, pool *pgxpool.Pool) (LiveSchema, error) {
+func InspectLiveSchema(ctx context.Context, pool SchemaQueryer) (LiveSchema, error) {
 	live := LiveSchema{Tables: map[string]liveTable{}}
 	if err := inspectTables(ctx, pool, &live); err != nil {
 		return LiveSchema{}, err
@@ -63,7 +68,7 @@ func InspectLiveSchema(ctx context.Context, pool *pgxpool.Pool) (LiveSchema, err
 	return live, nil
 }
 
-func inspectTables(ctx context.Context, pool *pgxpool.Pool, live *LiveSchema) error {
+func inspectTables(ctx context.Context, pool SchemaQueryer, live *LiveSchema) error {
 	rows, err := pool.Query(ctx, `
 SELECT c.relname
 FROM pg_class c
@@ -89,7 +94,7 @@ ORDER BY c.relname`)
 	return nil
 }
 
-func inspectColumns(ctx context.Context, pool *pgxpool.Pool, live *LiveSchema) error {
+func inspectColumns(ctx context.Context, pool SchemaQueryer, live *LiveSchema) error {
 	rows, err := pool.Query(ctx, `
 SELECT
 	c.relname,
@@ -132,7 +137,7 @@ ORDER BY c.relname, a.attnum`)
 	return nil
 }
 
-func inspectTableRows(ctx context.Context, pool *pgxpool.Pool, live *LiveSchema) error {
+func inspectTableRows(ctx context.Context, pool SchemaQueryer, live *LiveSchema) error {
 	for _, name := range sortedTableNames(live.Tables) {
 		var hasRows bool
 		sql := fmt.Sprintf("SELECT EXISTS (SELECT 1 FROM %s LIMIT 1)", quoteIdent(name))
@@ -147,7 +152,7 @@ func inspectTableRows(ctx context.Context, pool *pgxpool.Pool, live *LiveSchema)
 	return nil
 }
 
-func inspectIndexes(ctx context.Context, pool *pgxpool.Pool, live *LiveSchema) error {
+func inspectIndexes(ctx context.Context, pool SchemaQueryer, live *LiveSchema) error {
 	rows, err := pool.Query(ctx, `
 SELECT tablename, indexname, indexdef
 FROM pg_indexes
@@ -175,7 +180,7 @@ ORDER BY tablename, indexname`)
 	return nil
 }
 
-func inspectConstraints(ctx context.Context, pool *pgxpool.Pool, live *LiveSchema) error {
+func inspectConstraints(ctx context.Context, pool SchemaQueryer, live *LiveSchema) error {
 	rows, err := pool.Query(ctx, `
 SELECT c.relname, con.conname, con.contype::text, pg_get_constraintdef(con.oid)
 FROM pg_constraint con

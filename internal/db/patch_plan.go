@@ -25,7 +25,9 @@ const (
 
 // PatchOperationPlan is a read-only plan for patch operations.
 type PatchOperationPlan struct {
-	Operations []PatchOperation
+	Operations     []PatchOperation
+	SchemaAfter    LiveSchema
+	UnsimulatedSQL bool
 }
 
 // PatchOperation retains either SQL or private structured Record input for execution.
@@ -55,7 +57,7 @@ func BuildPatchOperationPlan(loaded []patches.LoadedPatch, entities []catalog.Lo
 		return PatchOperationPlan{}, err
 	}
 
-	var plan PatchOperationPlan
+	plan := PatchOperationPlan{SchemaAfter: cloneLiveSchema(live)}
 	for _, patch := range loaded {
 		for index, operation := range patch.Patch.Operations {
 			reader := patchOperationReader{patch: patch, index: index, operation: operation}
@@ -64,8 +66,12 @@ func BuildPatchOperationPlan(loaded []patches.LoadedPatch, entities []catalog.Lo
 				return PatchOperationPlan{}, fmt.Errorf("%s: %w", reader.source(), err)
 			}
 			plan.Operations = append(plan.Operations, planned)
+			if planned.Type == PatchOperationSQL {
+				plan.UnsimulatedSQL = true
+			}
 		}
 	}
+	plan.SchemaAfter = cloneLiveSchema(planner.live)
 	return plan, nil
 }
 

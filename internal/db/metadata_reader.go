@@ -149,15 +149,18 @@ func NewMetadataReader(queryer MetadataQueryer) MetadataReader {
 	return MetadataReader{queryer: queryer}
 }
 
-// ListApps returns all persisted Apps ordered by name.
+// ListApps returns runtime-visible Apps ordered by name.
 func (r MetadataReader) ListApps(ctx context.Context) ([]MetadataApp, error) {
 	if err := r.requireQueryer(); err != nil {
 		return nil, err
 	}
+	args := []any{}
+	predicate := AppRuntimePredicate(ctx, "", &args)
 	rows, err := r.queryer.Query(ctx, `
 SELECT name, label, version, status
 FROM "app"
-ORDER BY name`)
+WHERE `+predicate+`
+ORDER BY name`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query metadata apps: %w", err)
 	}
@@ -183,10 +186,12 @@ func (r MetadataReader) GetApp(ctx context.Context, name string) (MetadataApp, e
 		return MetadataApp{}, err
 	}
 	var app MetadataApp
+	args := []any{name}
+	predicate := AppRuntimePredicate(ctx, "", &args)
 	err := r.queryer.QueryRow(ctx, `
 SELECT name, label, version, status
 FROM "app"
-WHERE name = $1`, name).Scan(&app.Name, &app.Label, &app.Version, &app.Status)
+WHERE name = $1 AND `+predicate, args...).Scan(&app.Name, &app.Label, &app.Version, &app.Status)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return MetadataApp{}, MetadataNotFoundError{Kind: "app", Name: name}
 	}
@@ -201,12 +206,14 @@ func (r MetadataReader) ListEntities(ctx context.Context) ([]MetadataEntity, err
 	if err := r.requireQueryer(); err != nil {
 		return nil, err
 	}
+	args := []any{}
+	predicate := AppRuntimePredicate(ctx, "a", &args)
 	rows, err := r.queryer.Query(ctx, `
 SELECT e.name, e.key, COALESCE(e.slug, ''), e.label, COALESCE(e.description, ''), COALESCE(e.icon, ''), COALESCE(e.is_single, false), COALESCE(e.is_system, false), COALESCE(e.is_collection, false), COALESCE(e.is_private, false), COALESCE(e.private_owner_field, ''), e.naming, a.name, a.label, to_jsonb(e)->'tree'
 FROM "entity" e
 JOIN "app" a ON a.id = e.app_id
-WHERE NOT e.retired
-ORDER BY a.name, e.key`)
+WHERE NOT e.retired AND `+predicate+`
+ORDER BY a.name, e.key`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query metadata entities: %w", err)
 	}
@@ -253,6 +260,7 @@ func (r MetadataReader) getEntityMeta(ctx context.Context, name string, sql stri
 		return MetadataEntityMeta{}, err
 	}
 
+	sql += " AND " + AppRuntimePredicate(ctx, "a", &args)
 	var meta MetadataEntityMeta
 	var naming []byte
 	var slug string
