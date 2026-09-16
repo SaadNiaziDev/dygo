@@ -56,7 +56,7 @@ dygo generate entity crm/contact
 dygo generate job crm/send-welcome-email
 
 dygo app validate
-dygo app install crm
+dygo app install https://github.com/acme/dygo-crm.git
 dygo entity validate
 dygo doctor
 

@@ -50,7 +50,7 @@ List discovered apps from the current project:
 ```sh
 dygo app list
 dygo app validate
-dygo app install dygo-crm
+dygo app install https://github.com/acme/dygo-crm.git
 dygo entity list
 dygo entity validate
 ```
@@ -67,4 +67,4 @@ The app manifest is currently a framework-owned metadata input.
 
 The manifest does not include an app `type` field. Core and Studio bootstrap rules are handled by framework code.
 
-`dygo app install <app>` does not fetch remote source. It validates source already present under `apps/` or `.dygo/apps/`, resolves its dependency closure, and updates generated Hook and Job runner wiring. It never connects to a database. Run `dygo db migrate` explicitly to apply App metadata, patches, access, Fixtures, and lifecycle state.
+`dygo app install <repository-url>` clones the repository's default revision, requires `app.yml` at its root, validates the App with the current project, and copies the source to `apps/<name>` without Git metadata. Existing dependencies must already be installed. It then updates generated Hook and Job runner wiring. It never connects to a database. Run `dygo db migrate` explicitly to apply App metadata, patches, access, Fixtures, and lifecycle state.
