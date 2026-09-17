@@ -4,14 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useInfiniteQuery, useQuery } from '@tanstack/vue-query'
 import { useStorage } from '@vueuse/core'
 import { ArrowDown, ArrowUp, Check, Download, Play, Settings2, X } from '@lucide/vue'
-import {
-  PopoverContent,
-  PopoverPortal,
-  PopoverRoot,
-  PopoverTrigger,
-} from 'reka-ui'
 
-import { Button, Checkbox, IconButton, Input } from '@/design'
+import { Button, Checkbox, IconButton, Input, Popover } from '@/design'
 import DataTable from '@/design/organisms/DataTable.vue'
 import type { DataTableRowKey, DataTableSort, DataTableState } from '@/design/types'
 import type { EntityActionDefinition, MetadataField, MetadataFilterOperator } from '@/features/metadata/metadata.api'
@@ -982,93 +976,88 @@ async function exportCSV() {
         <Button v-if="!readOnly" variant="ghost" size="sm" @click="importOpen = !importOpen">
           Import CSV
         </Button>
-        <PopoverRoot
+        <Popover
           :open="viewOptionsOpen"
+          panel-class="record-list-renderer__view-options"
+          align="end"
+          :side-offset="6"
           @update:open="updateViewOptionsOpen"
         >
-          <PopoverTrigger as-child>
+          <template #trigger>
             <IconButton label="View options" type="button" variant="secondary">
               <Settings2 :size="14" :stroke-width="1.8" aria-hidden="true" />
             </IconButton>
-          </PopoverTrigger>
+          </template>
 
-          <PopoverPortal>
-            <PopoverContent
-              class="record-list-renderer__view-options"
-              align="end"
-              :side-offset="6"
-            >
-              <section class="record-list-renderer__view-options-section">
-                <div class="record-list-renderer__view-options-row">
-                  <span class="record-list-renderer__view-options-label">Ordering</span>
-                  <div class="record-list-renderer__ordering-controls">
-                    <select
-                      class="record-list-renderer__ordering-field"
-                      :value="orderingField"
-                      aria-label="Ordering field"
-                      @change="updateOrderingField(($event.target as HTMLSelectElement).value)"
-                    >
-                      <option value="">Field</option>
-                      <option
-                        v-for="option in orderingOptions"
-                        :key="option.key"
-                        :value="option.key"
-                      >
-                        {{ option.label }}
-                      </option>
-                    </select>
-                    <button
-                      class="record-list-renderer__ordering-direction"
-                      type="button"
-                      :aria-label="orderingDirection === 'asc' ? 'Ascending' : 'Descending'"
-                      @click="toggleOrderingDirection"
-                    >
-                      <ArrowUp
-                        v-if="orderingDirection === 'asc'"
-                        :size="14"
-                        :stroke-width="1.9"
-                        aria-hidden="true"
-                      />
-                      <ArrowDown
-                        v-else
-                        :size="14"
-                        :stroke-width="1.9"
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              <section v-if="!viewKey || viewKey === 'list'" class="record-list-renderer__view-options-section">
-                <div class="record-list-renderer__view-options-heading">Display properties</div>
-                <div class="record-list-renderer__property-list">
-                  <label
-                    v-for="column in columns"
-                    :key="column.key"
-                    class="record-list-renderer__property-row"
-                    :class="{ 'record-list-renderer__property-row--disabled': column.key === 'name' }"
-                  >
-                    <Checkbox
-                      :model-value="column.key === 'name' || !hiddenColumnKeySet.has(column.key)"
-                      :disabled="column.key === 'name'"
-                      @update:model-value="(visible) => updateColumnVisibility(column.key, visible)"
-                    />
-                    <span>{{ column.label }}</span>
-                  </label>
-                </div>
-                <button
-                  class="record-list-renderer__show-all-properties"
-                  type="button"
-                  :disabled="hiddenColumnKeySet.size === 0"
-                  @click="showAllColumns"
+          <section class="record-list-renderer__view-options-section">
+            <div class="record-list-renderer__view-options-row">
+              <span class="record-list-renderer__view-options-label">Ordering</span>
+              <div class="record-list-renderer__ordering-controls">
+                <select
+                  class="record-list-renderer__ordering-field"
+                  :value="orderingField"
+                  aria-label="Ordering field"
+                  @change="updateOrderingField(($event.target as HTMLSelectElement).value)"
                 >
-                  Show all properties
+                  <option value="">Field</option>
+                  <option
+                    v-for="option in orderingOptions"
+                    :key="option.key"
+                    :value="option.key"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
+                <button
+                  class="record-list-renderer__ordering-direction"
+                  type="button"
+                  :aria-label="orderingDirection === 'asc' ? 'Ascending' : 'Descending'"
+                  @click="toggleOrderingDirection"
+                >
+                  <ArrowUp
+                    v-if="orderingDirection === 'asc'"
+                    :size="14"
+                    :stroke-width="1.9"
+                    aria-hidden="true"
+                  />
+                  <ArrowDown
+                    v-else
+                    :size="14"
+                    :stroke-width="1.9"
+                    aria-hidden="true"
+                  />
                 </button>
-              </section>
-            </PopoverContent>
-          </PopoverPortal>
-        </PopoverRoot>
+              </div>
+            </div>
+          </section>
+
+          <section v-if="!viewKey || viewKey === 'list'" class="record-list-renderer__view-options-section">
+            <div class="record-list-renderer__view-options-heading">Display properties</div>
+            <div class="record-list-renderer__property-list">
+              <label
+                v-for="column in columns"
+                :key="column.key"
+                class="record-list-renderer__property-row"
+                :class="{ 'record-list-renderer__property-row--disabled': column.key === 'name' }"
+              >
+                <Checkbox
+                  :model-value="column.key === 'name' || !hiddenColumnKeySet.has(column.key)"
+                  :disabled="column.key === 'name'"
+                  @update:model-value="(visible) => updateColumnVisibility(column.key, visible)"
+                />
+                <span>{{ column.label }}</span>
+              </label>
+            </div>
+            <button
+              class="record-list-renderer__show-all-properties"
+              type="button"
+              :disabled="hiddenColumnKeySet.size === 0"
+              @click="showAllColumns"
+            >
+              Show all properties
+            </button>
+          </section>
+        </Popover>
 
       </template>
     </PageToolbar>

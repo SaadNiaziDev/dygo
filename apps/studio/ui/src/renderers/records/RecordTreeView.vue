@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useQueries } from '@tanstack/vue-query'
-import { TreeRoot, TreeItem, TreeVirtualizer } from 'reka-ui'
-import { ChevronRight } from '@lucide/vue'
 import { useAuthStore } from '@/stores/auth.store'
+import { Tree } from '@/design'
 import { listTreeRecords } from '@/features/records/tree.api'
 import { searchTree, treeRecord, type TreeItem as Item } from '@/features/records/tree'
 import type { RecordData } from '@/features/records/records.api'
@@ -63,36 +62,30 @@ function activate(item: Item) {
   if (item.action) item.action()
   else if (item.record) emit('open-record', item.record)
 }
-function toggle(key: string) { expanded.value = expanded.value.includes(key) ? expanded.value.filter((item) => item !== key) : [...expanded.value, key] }
 </script>
 
 <template>
   <div class="record-tree-view">
     <p v-if="!items.length" role="status">{{ filtered ? 'No matching Records' : 'No Records' }}</p>
-    <TreeRoot v-else v-model:expanded="expanded" :items="items" :get-key="(item: Item) => item.key" :get-children="(item: Item) => item.children" aria-label="Record tree" class="record-tree-view__tree">
-      <TreeVirtualizer v-slot="{ item }" :estimate-size="34" :text-content="(item) => String(item.label)">
-        <TreeItem v-slot="{ isExpanded }" v-bind="item.bind" :value="item.value" class="record-tree-view__row" :style="{ paddingLeft: `${12 + (item.level - 1) * 20}px` }" @select.prevent="activate(item.value as Item)" @toggle="(event) => { if (event.detail.originalEvent.type === 'click') event.preventDefault() }">
-          <button v-if="item.value.children" type="button" tabindex="-1" :aria-label="`${isExpanded ? 'Collapse' : 'Expand'} ${item.value.label}`" @click.stop="toggle(item.value.key)"><ChevronRight :size="14" :class="{ expanded: isExpanded }" aria-hidden="true" /></button>
-          <span v-else class="record-tree-view__spacer" />
-          <span class="record-tree-view__label">{{ item.value.label }}</span>
-          <small v-if="item.value.pathUnavailable">Path unavailable</small>
-          <small v-else-if="item.value.contextOnly">Context</small>
-        </TreeItem>
-      </TreeVirtualizer>
-    </TreeRoot>
+    <Tree
+      v-else
+      v-model:expanded="expanded"
+      :items="items"
+      label="Record tree"
+      @select="activate"
+    >
+      <template #default="{ item }">
+        <span class="record-tree-view__label">{{ item.label }}</span>
+        <small v-if="item.pathUnavailable">Path unavailable</small>
+        <small v-else-if="item.contextOnly">Context</small>
+      </template>
+    </Tree>
   </div>
 </template>
 
 <style scoped>
 .record-tree-view { flex: 1; min-height: 0; overflow: hidden; }
 .record-tree-view > p { padding: 20px; color: var(--studio-text-muted); }
-.record-tree-view__tree { height: 100%; overflow: auto; padding: 4px 0; margin: 0; list-style: none; }
-.record-tree-view__row { display: flex; align-items: center; gap: 8px; height: 34px; padding-right: 12px; color: var(--studio-text); cursor: pointer; }
-.record-tree-view__row:hover { background: var(--studio-surface-raised); }
-.record-tree-view__row:focus-visible { outline: 2px solid var(--studio-focus); outline-offset: -2px; background: var(--studio-surface-raised); }
-.record-tree-view__row button { display: grid; place-items: center; flex: none; width: 20px; height: 26px; border: 0; background: transparent; color: var(--studio-text-muted); cursor: pointer; }
-.record-tree-view__row .expanded { transform: rotate(90deg); }
-.record-tree-view__spacer { width: 20px; flex: none; }
 .record-tree-view__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.record-tree-view__row small { color: var(--studio-text-muted); white-space: nowrap; }
+.record-tree-view small { color: var(--studio-text-muted); white-space: nowrap; }
 </style>

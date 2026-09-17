@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { ComboboxRoot, ComboboxInput, ComboboxContent, ComboboxItem, ComboboxEmpty, ComboboxPortal } from 'reka-ui'
+import { Combobox, ComboboxItem } from '@/design'
 import { linkOptions, type MetadataField } from '@/features/metadata/metadata.api'
 import { useMetadataEntitiesQuery } from '@/features/metadata/metadata.query'
 import { listRecords, type RecordData } from '@/features/records/records.api'
@@ -35,19 +35,34 @@ function update(value: string, index: number) {
   next[index] = filterWireValue(value, props.field.type)
   emit('update:modelValue', arity.value === 'range' ? next.join('..') : next[0]!)
 }
+function selectLink(value: string) {
+  emit('update:modelValue', String(value))
+  emit('apply')
+}
 </script>
 
 <template>
   <span v-if="arity !== 'none'" class="filter-value-input">
-    <ComboboxRoot v-if="field.type === 'link'" v-model:open="open" :model-value="modelValue" :disabled="!canSearch" ignore-filter @update:model-value="(value) => { emit('update:modelValue', String(value)); emit('apply') }">
-      <ComboboxInput :display-value="() => modelValue" :aria-label="`${field.label} value`" :placeholder="canSearch ? 'Search records' : 'Set dependent filters first'" @input="search = ($event.target as HTMLInputElement).value" />
-      <ComboboxPortal><ComboboxContent class="filter-field-picker" position="popper">
-        <span v-if="records.isFetching.value">Loading…</span>
-        <span v-else-if="records.error.value">Could not load records.</span>
-        <ComboboxEmpty v-else>No matching records</ComboboxEmpty>
-        <ComboboxItem v-for="record in records.data.value?.data ?? []" :key="String(record.name)" :value="String(record.name)">{{ link?.displayField ? record[link.displayField] ?? record.name : record.name }}</ComboboxItem>
-      </ComboboxContent></ComboboxPortal>
-    </ComboboxRoot>
+    <Combobox
+      v-if="field.type === 'link'"
+      v-model:open="open"
+      :model-value="modelValue"
+      :disabled="!canSearch"
+      ignore-filter
+      :label="`${field.label} value`"
+      :display-value="() => modelValue"
+      :placeholder="canSearch ? 'Search records' : 'Set dependent filters first'"
+      panel-class="filter-field-picker"
+      input-class="filter-value-input__combobox"
+      empty-text=""
+      @update:search="search = $event"
+      @update:model-value="selectLink"
+    >
+      <span v-if="records.isFetching.value">Loading…</span>
+      <span v-else-if="records.error.value">Could not load records.</span>
+      <span v-else-if="!(records.data.value?.data ?? []).length">No matching records</span>
+      <ComboboxItem v-for="record in records.data.value?.data ?? []" :key="String(record.name)" :value="String(record.name)">{{ link?.displayField ? record[link.displayField] ?? record.name : record.name }}</ComboboxItem>
+    </Combobox>
     <template v-else v-for="index in arity === 'range' ? 2 : 1" :key="index">
       <span v-if="index === 2">–</span>
       <select v-if="field.type === 'boolean' || field.type === 'select'" :value="values[index - 1] ?? ''" :aria-label="`${field.label} value ${index}`" @change="update(($event.target as HTMLSelectElement).value, index - 1); emit('apply')">
@@ -62,4 +77,5 @@ function update(value: string, index: number) {
 <style scoped>
 .filter-value-input { display: inline-flex; align-items: center; min-width: 0; }
 .filter-value-input :is(input, select) { width: 140px; min-width: 70px; height: 100%; border: 0; background: var(--studio-surface); color: var(--studio-text); padding: 0 6px; font: inherit; }
+:global(.filter-value-input__combobox) { width: 140px; min-width: 70px; height: 100%; border: 0; background: var(--studio-surface); color: var(--studio-text); padding: 0 6px; font: inherit; }
 </style>

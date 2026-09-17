@@ -1,6 +1,6 @@
 ---
 name: dygo-studio-development
-description: Implement or review dygo Studio behavior in Vue, TypeScript, Pinia, TanStack Query, Vue Router, Reka UI, and framework renderers. Use for Studio application logic, navigation, state, API integration, and shared components.
+description: Implement or review dygo Studio behavior in Vue, TypeScript, Pinia, TanStack Query, Vue Router, the dygo design system, and framework renderers. Use for Studio application logic, navigation, state, API integration, and shared components.
 ---
 
 # dygo Studio Development
@@ -22,7 +22,7 @@ Read the affected UI contract and relevant sections of `docs/studio.md`; use `do
 - Keep route identity aligned with the server route registry and boot payload.
 - Enforce permissions on the server. Use client checks only for presentation and guidance.
 - Handle loading, empty, error, forbidden, and retry states.
-- Use Reka UI primitives for accessible complex interactions where available.
+- Import Studio design components from `@dygo/ui`. Do not import `reka-ui` in feature, shell, renderer, or page code; only `apps/studio/ui/src/design/` may import it. Add or extend a design-system primitive when a needed interaction is missing.
 - Use Lucide icons through the shared conventions.
 - Preserve keyboard access, focus, responsive behavior, and reduced-motion preferences.
 - Do not create a one-off UI pattern when Studio needs a reusable primitive.

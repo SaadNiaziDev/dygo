@@ -1,17 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Bell } from '@lucide/vue'
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuRoot,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from 'reka-ui'
 import { useRouter } from 'vue-router'
 
+import { DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/design'
 import { useAuthStore } from '@/stores/auth.store'
 import { useNotificationCountQuery, useNotificationsQuery, useOpenNotification } from './notifications.query'
 
@@ -42,42 +34,39 @@ async function selectNotification(id: number) {
 </script>
 
 <template>
-  <DropdownMenuRoot @update:open="refresh">
-    <DropdownMenuTrigger as-child>
+  <DropdownMenu trigger-type="slot" panel-class="studio-notifications__content" @update:open="refresh">
+    <template #trigger>
       <button class="studio-notifications__trigger" type="button" aria-label="Notifications">
         <Bell :size="16" :stroke-width="1.8" aria-hidden="true" />
         <span v-if="unreadCount > 0" class="studio-notifications__badge" aria-label="Unread notifications">{{ badge }}</span>
       </button>
-    </DropdownMenuTrigger>
-    <DropdownMenuPortal>
-      <DropdownMenuContent class="studio-notifications__content" align="end" :side-offset="6">
-        <DropdownMenuLabel class="studio-notifications__label">
-          <span>Notifications</span>
-          <span v-if="unreadCount > 0">{{ unreadCount }} unread</span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator class="studio-notifications__separator" />
+    </template>
 
-        <p v-if="notifications.isPending.value" class="studio-notifications__state">Loading notifications</p>
-        <button v-else-if="notifications.error.value" class="studio-notifications__retry" type="button" @click="notifications.refetch()">
-          Could not load notifications. Try again.
-        </button>
-        <p v-else-if="items.length === 0" class="studio-notifications__state">All caught up.</p>
-        <template v-else>
-          <DropdownMenuItem
-            v-for="item in items"
-            :key="item.id"
-            class="studio-notifications__item"
-            :disabled="openNotification.isPending.value"
-            @select="selectNotification(item.id)"
-          >
-            <strong>{{ item.title }}</strong>
-            <span>{{ item.message }}</span>
-            <time :datetime="item['created-at']">{{ new Date(item['created-at']).toLocaleString() }}</time>
-          </DropdownMenuItem>
-        </template>
-      </DropdownMenuContent>
-    </DropdownMenuPortal>
-  </DropdownMenuRoot>
+    <DropdownMenuLabel class="studio-notifications__label">
+      <span>Notifications</span>
+      <span v-if="unreadCount > 0">{{ unreadCount }} unread</span>
+    </DropdownMenuLabel>
+    <DropdownMenuSeparator class="studio-notifications__separator" />
+
+    <p v-if="notifications.isPending.value" class="studio-notifications__state">Loading notifications</p>
+    <button v-else-if="notifications.error.value" class="studio-notifications__retry" type="button" @click="notifications.refetch()">
+      Could not load notifications. Try again.
+    </button>
+    <p v-else-if="items.length === 0" class="studio-notifications__state">All caught up.</p>
+    <template v-else>
+      <DropdownMenuItem
+        v-for="item in items"
+        :key="item.id"
+        class="studio-notifications__item"
+        :disabled="openNotification.isPending.value"
+        @select="selectNotification(item.id)"
+      >
+        <strong>{{ item.title }}</strong>
+        <span>{{ item.message }}</span>
+        <time :datetime="item['created-at']">{{ new Date(item['created-at']).toLocaleString() }}</time>
+      </DropdownMenuItem>
+    </template>
+  </DropdownMenu>
 </template>
 
 <style>

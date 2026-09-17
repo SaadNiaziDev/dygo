@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ChevronDown, ChevronUp, Ellipsis, Pin } from '@lucide/vue'
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { RouterLink, useRoute } from 'vue-router'
 
+import { Popover } from '@/design'
 import { useMetadataEntitiesQuery } from '@/features/metadata/metadata.query'
 import type { PinnedItem } from './pinned'
 import { useBootStore } from '@/stores/boot.store'
@@ -86,28 +86,24 @@ function followPin(event: MouseEvent, path: string | null) {
 </script>
 
 <template>
-  <PopoverRoot v-if="items.length > 0 && props.collapsed">
-    <PopoverTrigger as-child>
+  <Popover v-if="items.length > 0 && props.collapsed" panel-class="pinned-nav__popover" side="right" align="start" :side-offset="8">
+    <template #trigger>
       <button class="pinned-nav__collapsed" type="button" aria-label="Open pinned items" title="Pinned">
         <Pin :size="16" :stroke-width="1.8" aria-hidden="true" />
       </button>
-    </PopoverTrigger>
-    <PopoverPortal>
-      <PopoverContent class="pinned-nav__popover" side="right" align="start" :side-offset="8">
-        <p class="pinned-nav__popover-title">Pinned</p>
-        <div class="pinned-nav__popover-list">
-          <div v-for="entry in items" :key="entry.item.path" class="pinned-nav__item" :class="{ 'pinned-nav__item--current': entry.path === route.path }">
-            <button class="pinned-nav__remove" type="button" :aria-label="`Unpin ${entry.item.label}`" @click="navigation.unpin(entry.item)">
-              <Pin :size="16" :stroke-width="1.8" aria-hidden="true" />
-            </button>
-            <RouterLink class="pinned-nav__link" :to="entry.path ?? route.fullPath" :aria-disabled="!entry.path" @click="followPin($event, entry.path)">
-              <span>{{ entry.item.label }}</span>
-            </RouterLink>
-          </div>
-        </div>
-      </PopoverContent>
-    </PopoverPortal>
-  </PopoverRoot>
+    </template>
+    <p class="pinned-nav__popover-title">Pinned</p>
+    <div class="pinned-nav__popover-list">
+      <div v-for="entry in items" :key="entry.item.path" class="pinned-nav__item" :class="{ 'pinned-nav__item--current': entry.path === route.path }">
+        <button class="pinned-nav__remove" type="button" :aria-label="`Unpin ${entry.item.label}`" @click="navigation.unpin(entry.item)">
+          <Pin :size="16" :stroke-width="1.8" aria-hidden="true" />
+        </button>
+        <RouterLink class="pinned-nav__link" :to="entry.path ?? route.fullPath" :aria-disabled="!entry.path" @click="followPin($event, entry.path)">
+          <span>{{ entry.item.label }}</span>
+        </RouterLink>
+      </div>
+    </div>
+  </Popover>
 
   <section v-else-if="items.length > 0" class="pinned-nav" aria-label="Pinned">
     <button class="pinned-nav__heading" type="button" :aria-expanded="navigation.pinnedOpen" @click="navigation.setPinnedOpen(!navigation.pinnedOpen)">
@@ -177,7 +173,7 @@ function followPin(event: MouseEvent, path: string | null) {
 .pinned-nav__more { display: flex; min-height: 32px; align-items: center; gap: 9px; border: 0; border-radius: var(--studio-radius-control); background: transparent; color: var(--studio-text-muted); padding: 0 10px; font-size: 13px; font-weight: 600; }
 .pinned-nav__more:hover { background: var(--studio-surface-raised); color: var(--studio-text); }
 .pinned-nav__collapsed { flex: 0 0 auto; }
-.pinned-nav__popover { z-index: 50; width: 240px; max-height: min(420px, 70vh); overflow: auto; border: 1px solid var(--studio-border); border-radius: var(--studio-radius-control); background: var(--studio-surface); box-shadow: var(--studio-shadow-control); padding: 8px; }
+:global(.pinned-nav__popover) { z-index: 50; width: 240px; max-height: min(420px, 70vh); overflow: auto; padding: 8px; border: 1px solid var(--studio-border); box-shadow: var(--studio-shadow-control); }
 .pinned-nav__popover-title { margin: 3px 10px 7px; color: var(--studio-text-muted); font-size: 12px; font-weight: 500; }
 @media (max-width: 720px) { .pinned-nav { min-width: 220px; margin: 0; } }
 </style>

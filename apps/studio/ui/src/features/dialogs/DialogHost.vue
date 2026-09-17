@@ -1,15 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  DialogContent,
-  DialogDescription,
-  DialogOverlay,
-  DialogPortal,
-  DialogRoot,
-  DialogTitle,
-} from 'reka-ui'
 
-import { Button } from '@/design'
+import { Button, Dialog } from '@/design'
 import { useDialogStore, type StudioDialog } from './dialogs.store'
 
 const dialogStore = useDialogStore()
@@ -21,16 +13,6 @@ function onOpenChange(open: boolean) {
   }
 }
 
-function preventOutside(event: Event) {
-  event.preventDefault()
-}
-
-function preventEscapeWhenRequired(event: Event) {
-  if (!topDialog.value?.dismissible) {
-    event.preventDefault()
-  }
-}
-
 function choose(dialog: StudioDialog, key: string) {
   dialogStore.selectAction(dialog.id, key)
 }
@@ -38,36 +20,30 @@ function choose(dialog: StudioDialog, key: string) {
 </script>
 
 <template>
-  <DialogRoot :open="Boolean(topDialog)" modal @update:open="onOpenChange">
-    <DialogPortal v-if="topDialog">
-      <DialogOverlay class="studio-dialog__overlay" />
-      <DialogContent
-        class="studio-dialog"
-        :data-type="topDialog.type"
-        @escape-key-down="preventEscapeWhenRequired"
-        @pointer-down-outside="preventOutside"
-        @interact-outside="preventOutside"
+  <Dialog
+    :open="Boolean(topDialog)"
+    :dismissible="topDialog?.dismissible ?? true"
+    :title="topDialog?.title"
+    :description="topDialog?.content"
+    :panel-attrs="{ 'data-type': topDialog?.type }"
+    panel-class="studio-dialog"
+    overlay-class="studio-dialog__overlay"
+    title-class="studio-dialog__title"
+    description-class="studio-dialog__content"
+    @update:open="onOpenChange"
+  >
+    <div v-if="topDialog" class="studio-dialog__actions">
+      <Button
+        v-for="action in topDialog.actions"
+        :key="action.key"
+        :variant="action.variant"
+        size="sm"
+        @click="choose(topDialog, action.key)"
       >
-        <DialogTitle class="studio-dialog__title">
-          {{ topDialog.title }}
-        </DialogTitle>
-        <DialogDescription v-if="topDialog.content" class="studio-dialog__content">
-          {{ topDialog.content }}
-        </DialogDescription>
-        <div class="studio-dialog__actions">
-          <Button
-            v-for="action in topDialog.actions"
-            :key="action.key"
-            :variant="action.variant"
-            size="sm"
-            @click="choose(topDialog, action.key)"
-          >
-            {{ action.label }}
-          </Button>
-        </div>
-      </DialogContent>
-    </DialogPortal>
-  </DialogRoot>
+        {{ action.label }}
+      </Button>
+    </div>
+  </Dialog>
 </template>
 
 <style>

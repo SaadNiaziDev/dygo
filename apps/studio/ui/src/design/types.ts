@@ -30,7 +30,7 @@ export type DataTableSort = {
 
 export type DataTableState = 'ready' | 'loading' | 'empty' | 'forbidden' | 'unauthenticated' | 'error'
 
-export type DropdownMenuItem =
+export type DropdownMenuItemModel =
   | {
       type: 'item'
       key: string

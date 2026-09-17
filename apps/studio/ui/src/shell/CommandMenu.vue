@@ -4,14 +4,6 @@ import { useQuery } from '@tanstack/vue-query'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter, type RouteLocationNormalizedLoaded } from 'vue-router'
 import {
-  DialogContent,
-  DialogOverlay,
-  DialogPortal,
-  DialogRoot,
-  DialogTitle,
-  DialogTrigger,
-} from 'reka-ui'
-import {
   Clock,
   Command,
   FilePlus2,
@@ -20,6 +12,7 @@ import {
   Search,
 } from '@lucide/vue'
 
+import { Dialog } from '@/design'
 import { queryClient } from '@/app/query'
 import { pageCommands, studioCommands, globalCommands, runStudioCommand } from '@/features/commands/context'
 import { bindings, commandBinding, executeCommand, unavailable, shortcutLabel, ariaShortcut, type StudioCommand } from '@/features/commands/shortcuts'
@@ -431,8 +424,19 @@ function itemDomId(item: CommandItem): string {
 
 <template>
   <div class="studio-command-menu">
-    <DialogRoot :open="commandMenuOpen" modal @update:open="updateMenuOpen">
-      <DialogTrigger as-child>
+    <Dialog
+      :open="commandMenuOpen"
+      title="Command menu"
+      title-sr-only
+      description="Search pages, actions, and Records."
+      description-class="sr-only"
+      :panel-attrs="{ 'data-studio-command-menu': true }"
+      panel-class="studio-command-menu__dialog"
+      overlay-class="studio-command-menu__overlay"
+      @update:open="updateMenuOpen"
+      @close-auto-focus="restoreFocus"
+    >
+      <template #trigger>
         <button
           class="studio-command-menu__trigger"
           type="button"
@@ -448,116 +452,103 @@ function itemDomId(item: CommandItem): string {
           </span>
           <span class="studio-command-menu__shortcut-label">{{ shortcutLabel(paletteShortcut) }}</span>
         </button>
-      </DialogTrigger>
-
-      <DialogPortal>
-        <DialogOverlay class="studio-command-menu__overlay" />
-        <DialogContent
-          data-studio-command-menu
-          class="studio-command-menu__dialog"
-          aria-describedby="studio-command-menu-description"
-          @close-auto-focus="restoreFocus"
+      </template>
+      <div v-if="searchingRecords" class="studio-command-menu__input-wrap">
+        <button type="button" @click="searchingRecords = false; query = ''">Back</button>
+        <select v-model="searchEntity" aria-label="Search Entity" class="studio-command-menu__input">
+          <option value="">Select an Entity</option>
+          <option v-for="entity in recordEntities" :key="entity.name" :value="entity.slug">{{ entityLabel(entity) }}</option>
+        </select>
+      </div>
+      <div class="studio-command-menu__input-wrap">
+        <Search class="studio-command-menu__dialog-icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
+        <input
+          ref="searchInput"
+          v-model="query"
+          class="studio-command-menu__input"
+          type="search"
+          :placeholder="searchingRecords ? 'Search Record IDs' : 'Search or type a command'"
+          role="combobox"
+          aria-controls="studio-command-menu-list"
+          :aria-expanded="commandMenuOpen"
+          :aria-activedescendant="activeDescendantId"
+          @keydown="handleInputKeydown"
         >
-          <DialogTitle class="sr-only">Command menu</DialogTitle>
-          <p id="studio-command-menu-description" class="sr-only">Search pages, actions, and Records.</p>
-          <div v-if="searchingRecords" class="studio-command-menu__input-wrap">
-            <button type="button" @click="searchingRecords = false; query = ''">Back</button>
-            <select v-model="searchEntity" aria-label="Search Entity" class="studio-command-menu__input">
-              <option value="">Select an Entity</option>
-              <option v-for="entity in recordEntities" :key="entity.name" :value="entity.slug">{{ entityLabel(entity) }}</option>
-            </select>
-          </div>
-          <div class="studio-command-menu__input-wrap">
-            <Search class="studio-command-menu__dialog-icon" :size="16" :stroke-width="1.8" aria-hidden="true" />
-            <input
-              ref="searchInput"
-              v-model="query"
-              class="studio-command-menu__input"
-              type="search"
-              :placeholder="searchingRecords ? 'Search Record IDs' : 'Search or type a command'"
-              role="combobox"
-              aria-controls="studio-command-menu-list"
-              :aria-expanded="commandMenuOpen"
-              :aria-activedescendant="activeDescendantId"
-              @keydown="handleInputKeydown"
-            >
-            <span class="studio-command-menu__dialog-shortcut" aria-hidden="true">
-              <kbd>{{ shortcutLabel(paletteShortcut) }}</kbd>
-            </span>
-          </div>
+        <span class="studio-command-menu__dialog-shortcut" aria-hidden="true">
+          <kbd>{{ shortcutLabel(paletteShortcut) }}</kbd>
+        </span>
+      </div>
 
-          <div
-            id="studio-command-menu-list"
-            class="studio-command-menu__list"
-            role="listbox"
-            aria-label="Commands"
+      <div
+        id="studio-command-menu-list"
+        class="studio-command-menu__list"
+        role="listbox"
+        aria-label="Commands"
+      >
+        <template v-if="commandGroups.length > 0">
+          <section
+            v-for="group in commandGroups"
+            :key="group.key"
+            class="studio-command-menu__group"
           >
-            <template v-if="commandGroups.length > 0">
-              <section
-                v-for="group in commandGroups"
-                :key="group.key"
-                class="studio-command-menu__group"
-              >
-                <div class="studio-command-menu__group-label">{{ group.label }}</div>
+            <div class="studio-command-menu__group-label">{{ group.label }}</div>
 
-                <button
-                  v-for="item in group.items"
-                  :id="itemDomId(item)"
-                  :key="item.id"
-                  class="studio-command-menu__item"
-                  :class="{ 'studio-command-menu__item--active': item.id === activeItemId }"
-                  type="button"
-                  role="option"
-                  :aria-selected="item.id === activeItemId"
-                  :disabled="unavailable(item)"
-                  @mouseenter="activeItemId = item.id"
-                  @click="runCommand(item)"
-                >
-                  <component
-                    :is="item.icon"
-                    class="studio-command-menu__item-icon"
-                    :size="16"
-                    :stroke-width="1.8"
-                    aria-hidden="true"
-                  />
-                  <span class="studio-command-menu__item-copy">
-                    <span class="studio-command-menu__item-label">{{ item.label }}</span>
-                    <span class="studio-command-menu__item-detail">{{ item.disabledReason || item.detail }}</span>
-                  </span>
-                  <kbd v-if="commandBinding(item).shortcut">{{ shortcutLabel(commandBinding(item).shortcut) }}</kbd>
-                </button>
-              </section>
-            </template>
-
-            <div v-else class="studio-command-menu__empty" role="status">
-              {{ emptyMessage }}
-            </div>
-          </div>
-
-          <div class="studio-command-menu__footer" aria-hidden="true">
-            <span class="studio-command-menu__hint">
-              <kbd>Up</kbd>
-              <kbd>Down</kbd>
-              <span>navigate</span>
-            </span>
-            <span class="studio-command-menu__hint">
-              <kbd>Enter</kbd>
-              <span>select</span>
-            </span>
-            <span class="studio-command-menu__hint">
-              <span class="studio-command-menu__hint-shortcut">
-                <kbd>{{ shortcutLabel(paletteShortcut) }}</kbd>
+            <button
+              v-for="item in group.items"
+              :id="itemDomId(item)"
+              :key="item.id"
+              class="studio-command-menu__item"
+              :class="{ 'studio-command-menu__item--active': item.id === activeItemId }"
+              type="button"
+              role="option"
+              :aria-selected="item.id === activeItemId"
+              :disabled="unavailable(item)"
+              @mouseenter="activeItemId = item.id"
+              @click="runCommand(item)"
+            >
+              <component
+                :is="item.icon"
+                class="studio-command-menu__item-icon"
+                :size="16"
+                :stroke-width="1.8"
+                aria-hidden="true"
+              />
+              <span class="studio-command-menu__item-copy">
+                <span class="studio-command-menu__item-label">{{ item.label }}</span>
+                <span class="studio-command-menu__item-detail">{{ item.disabledReason || item.detail }}</span>
               </span>
-              <span>close</span>
-            </span>
-            <span class="studio-command-menu__hint">
-              <kbd>Esc</kbd>
-              <span>close</span>
-            </span>
-          </div>
-        </DialogContent>
-      </DialogPortal>
-    </DialogRoot>
+              <kbd v-if="commandBinding(item).shortcut">{{ shortcutLabel(commandBinding(item).shortcut) }}</kbd>
+            </button>
+          </section>
+        </template>
+
+        <div v-else class="studio-command-menu__empty" role="status">
+          {{ emptyMessage }}
+        </div>
+      </div>
+
+      <div class="studio-command-menu__footer" aria-hidden="true">
+        <span class="studio-command-menu__hint">
+          <kbd>Up</kbd>
+          <kbd>Down</kbd>
+          <span>navigate</span>
+        </span>
+        <span class="studio-command-menu__hint">
+          <kbd>Enter</kbd>
+          <span>select</span>
+        </span>
+        <span class="studio-command-menu__hint">
+          <span class="studio-command-menu__hint-shortcut">
+            <kbd>{{ shortcutLabel(paletteShortcut) }}</kbd>
+          </span>
+          <span>close</span>
+        </span>
+        <span class="studio-command-menu__hint">
+          <kbd>Esc</kbd>
+          <span>close</span>
+        </span>
+      </div>
+    </Dialog>
   </div>
 </template>
 

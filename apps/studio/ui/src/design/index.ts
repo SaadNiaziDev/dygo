@@ -6,7 +6,7 @@ export type {
   DataTableRowKey,
   DataTableSort,
   DataTableSortDirection,
-  DropdownMenuItem,
+  DropdownMenuItemModel,
   FieldOption,
   SegmentedControlOption,
   SegmentedControlValue,
@@ -24,9 +24,19 @@ export { default as LogoMark } from './atoms/LogoMark.vue'
 export { default as Spinner } from './atoms/Spinner.vue'
 export { default as Textarea } from './atoms/Textarea.vue'
 export { default as RadioGroup } from './primitives/RadioGroup.vue'
+export { default as Combobox } from './primitives/Combobox.vue'
+export { default as ComboboxItem } from './primitives/ComboboxItem.vue'
+export { default as Dialog } from './primitives/Dialog.vue'
 export { default as DropdownMenu } from './primitives/DropdownMenu.vue'
+export { default as DropdownMenuItem } from './primitives/DropdownMenuItem.vue'
+export { default as DropdownMenuLabel } from './primitives/DropdownMenuLabel.vue'
+export { default as DropdownMenuRadioGroup } from './primitives/DropdownMenuRadioGroup.vue'
+export { default as DropdownMenuSeparator } from './primitives/DropdownMenuSeparator.vue'
+export { default as DropdownMenuSub } from './primitives/DropdownMenuSub.vue'
+export { default as Popover } from './primitives/Popover.vue'
 export { default as Select } from './primitives/Select.vue'
 export { default as Switch } from './primitives/Switch.vue'
+export { default as Tree } from './primitives/Tree.vue'
 export { default as CheckboxField } from './molecules/CheckboxField.vue'
 export { default as ErrorState } from './molecules/ErrorState.vue'
 export { default as Field } from './molecules/Field.vue'
