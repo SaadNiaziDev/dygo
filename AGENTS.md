@@ -169,7 +169,7 @@ Prefer shared contracts and registries for:
 
 Bootstrap exceptions are allowed, but they must be explicit, small, and documented in the code path that needs them.
 
-`dygo migrate` stays additive and safe. `dygo schema prune` is the explicit destructive cleanup command for dygo's managed schema: metadata is source of truth, and prune may remove tables, columns, indexes, and constraints that exist in the managed schema but no longer exist in metadata. Do not keep long-lived unmanaged database objects in the managed schema; model them as metadata, clean them up in patches, or place them in another PostgreSQL schema.
+`dygo db migrate` stays additive and safe. `dygo db prune` is the explicit destructive cleanup command for dygo's managed schema: metadata is source of truth, and prune may remove tables, columns, indexes, and constraints that exist in the managed schema but no longer exist in metadata. Do not keep long-lived unmanaged database objects in the managed schema; model them as metadata, clean them up in patches, or place them in another PostgreSQL schema.
 
 ## Implementation Guidance
 

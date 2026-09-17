@@ -48,4 +48,4 @@ Login returns the current user and sets the session cookie:
 
 `/health` and `POST /api/v1/auth/login` are public. Boot, metadata, and Record API routes require a valid session. Metadata routes filter or deny data through the permission engine; Record routes require the relevant Entity action.
 
-This layer does not add API keys, OAuth, SSO, password reset, or Studio login UI. Record APIs are guarded separately through the permission engine.
+This layer does not add API keys, OAuth, SSO, or password reset. Record APIs are guarded separately through the permission engine.

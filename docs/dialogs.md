@@ -42,7 +42,7 @@ Studio needs one shared dialog surface for framework flows, metadata-driven acti
 - Do not add app-defined custom dialog components in v1.
 - Non-blocking messages use a separate toast API.
 - Dialogs stay blocking.
-- Toasts are tracked separately in Roadmap item `#263`.
+- Toasts are documented separately in [Toasts](toasts.md).
 - Do not model form-like dialogs in v1.
 - Form-like dialogs belong to future action or workflow forms.
 - Do not add dialog analytics or audit logging in v1.

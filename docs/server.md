@@ -145,6 +145,9 @@ GET /api/v1/apps
 GET /api/v1/apps/{app}
 GET /api/v1/entities
 GET /api/v1/entities/{entity}/meta
+GET /api/v1/platform
+GET /api/v1/pages
+GET /api/v1/pages/{app}/{page}
 ```
 
 Responses use stable JSON envelopes:
@@ -175,6 +178,7 @@ GET    /api/v1/records/{entity}/{id}
 GET    /api/v1/records/{entity}/name/{name}
 GET    /api/v1/records/{entity}/single
 GET    /api/v1/records/{entity}/{id}/activity?limit=50&offset=0
+GET    /api/v1/records/{entity}/{id}/secret-status
 GET    /api/v1/records/{entity}/export
 POST   /api/v1/records/{entity}
 POST   /api/v1/records/{entity}/actions/{action}

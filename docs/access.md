@@ -11,6 +11,7 @@ Current runtime still reads live Core `role`, `user-role`, and `permission` Reco
 - App role vocabulary lives in `apps/<app>/access/_roles.yml`.
 - Entity access metadata lives in `apps/<app>/access/<entity>.access.yml`.
 - Cross-app Entity access metadata lives in `apps/<contributor>/access/<target-app>/<entity>.access.yml`.
+- Page access metadata lives in `apps/<app>/access/<page>.page.access.yml`.
 - Use `_roles.yml`, not `roles.yml`, because it is an app-level access file inside a folder where normal files are Entity access files.
 - Use `<entity>.access.yml`, not `<entity>.policy.yml`, because the file contributes access policy for that Entity.
 - Do not use `apps/<app>/permissions/` or `entities/<entity>/permissions.yml` for the target model.
@@ -129,8 +130,7 @@ Current runtime still reads live Core `role`, `user-role`, and `permission` Reco
 - Entity metadata uses `entities/<entity>/<entity>.entity.yml`.
 - The Entity metadata rename includes shape helpers, generators, validators, JSON Schemas, metadata loading, and docs.
 - Reserved-name and fixture-eligibility extensions by apps are deferred beyond v1.
-- Track app-extendable reserved and fixture policies in Roadmap item `#261`.
-- Track broader metadata import conflict and versioning behavior in Roadmap item `#262`.
+- Versioned metadata import and replacement behavior for duplicate authored Records is deferred beyond v1.
 - Row-level and field-level access use the same validated policy AST.
 - Use explicit app Entities for changing access assignments. Do not use a generic polymorphic User Permission table.
 

@@ -47,7 +47,7 @@ GET /api/v1/records/lead?name:contains=smith
 GET /api/v1/records/lead?closed-at:empty
 ```
 
-Filters support visible DB-backed Fields and system fields: `id`, `name`, `created-at`, and `updated-at`. The reserved query params `limit`, `offset`, and `sort` cannot be used as HTTP filter names in v1. Write-only fields such as `password` and non-storage fields such as `collection` cannot be filtered.
+Filters support visible DB-backed Fields and system fields: `id`, `name`, `created-at`, and `updated-at`. The reserved query params `limit`, `offset`, and `sort` cannot be used as HTTP filter names in v1. Write-only fields such as `password` and `secret`, and non-storage fields such as `collection`, cannot be filtered.
 
 Sorting uses a comma-separated `sort` value. Prefix a field with `-` for descending order:
 
@@ -111,6 +111,7 @@ text
 email
 phone
 password
+secret
 long-text
 int
 bigint

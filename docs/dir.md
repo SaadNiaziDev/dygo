@@ -17,7 +17,7 @@ project/                         - Generated dygo project root
           <entity>.entity.yml    - Entity metadata definition
           hooks.go               - Entity hook scaffold
           fixtures.yml           - Entity fixture records
-          views.yml              - Entity view metadata
+          views.yml              - Reserved Entity view metadata (not loaded yet)
         _collections/            - Collection row definitions
           <collection>.yml       - Single-file collection metadata
           <collection>/          - Folder-form collection bundle
@@ -35,7 +35,7 @@ project/                         - Generated dygo project root
         <page>/                  - Custom page bundle
           <page>.page.yml        - Page metadata definition
           <page>.vue             - Vue Page view for renderer: vue
-      reports/                   - Cross-Entity report definitions
+      reports/                   - Cross-Entity report definitions (not loaded yet)
         <report>.yml             - Single-file report metadata
         <report>/                - Folder-form report bundle
           report.yml             - Report metadata definition
@@ -50,7 +50,7 @@ project/                         - Generated dygo project root
   .dygo/                         - Framework-managed Apps and local runtime state
     apps/
       core/                      - Tracked Core metadata required by fresh checkouts
-      studio/                    - Cached Studio UI assets
+      studio/                    - Studio metadata and cached UI assets
     files/                       - Local uploaded files
     logs/                        - Local runtime logs
     tmp/                         - Local temporary files
@@ -59,32 +59,7 @@ project/                         - Generated dygo project root
 
 ## Runtime
 
-```txt
-deploy/                          - Deployed project root
-  bin/                           - Compiled runner and hooks
-    dygo                         - Project dygo runner binary
-  config/                        - Deployment config files
-    dygo.yml                     - Runtime project config
-    secrets/                     - Mounted secret files
-  apps/                          - App metadata files
-    crm/                         - Deployed business app
-      app.yml                    - App manifest
-      entities/                  - Entity metadata files
-      access/                    - Role and Entity access metadata files
-      jobs/                      - Job metadata files
-      pages/                     - Custom page files
-      reports/                   - Report metadata files
-  db/                            - Runtime DB artifacts
-    schema.sql                   - Deployed schema snapshot
-  studio/                        - Studio static assets
-    dist/                        - Static UI bundle
-  storage/                       - Persistent runtime storage
-    files/                       - Uploaded/generated files
-      public/                    - Public runtime files
-      private/                   - Private runtime files
-    logs/                        - Runtime log files
-    tmp/                         - Runtime temporary files
-```
+A deployed runtime layout is not yet implemented. `dygo deploy` is proposed in the issue tracker and will define the deployed layout when it ships.
 
 ## Framework
 
@@ -95,28 +70,50 @@ dygo/                           - Framework repository root
   cmd/                          - Framework binaries live here
     dygo/                       - Stock dygo CLI
   internal/                     - Private framework packages
-    app/                        - App discovery and registry
-    auth/                       - Session authentication
+    access/                     - App access metadata load, apply, and export
+    accesspolicy/               - Conditional access policy AST
+    actions/                    - Entity action registry and execution
+    app/                        - App manifest loading and app registry
+    auth/                       - Password hashing and session authentication
     cli/                        - Cobra command implementation
     config/                     - Config loading defaults
     corevalues/                 - Built-in metadata constants
-    db/                         - PostgreSQL runtime layer
-    entity/                     - Entity metadata catalog
+    db/                         - PostgreSQL schema sync, records, and metadata
+    dygodata/                   - Internal adapters for the public SDK
+    entity/                     - Entity metadata catalog and field types
+    files/                      - Private file service
     fixtures/                   - Fixture loading runtime
+    frameworkapp/               - Framework-managed Core app installation
+    fsutil/                     - Shared filesystem helpers
+    generate/                   - App, Entity, hook, job, and page scaffolding
     health/                     - Health check handlers
     hookevents/                 - Hook event definitions
     hookgen/                    - Hook scaffold generator
     hooks/                      - Hook runtime registry
+    imports/                    - Durable CSV import service
+    jobgen/                     - Job scaffold generator
+    jobs/                       - Job metadata, runtime, and queue store
+    migration/                  - App lifecycle migration transaction
     naming/                     - Record naming strategies
+    notifications/              - Notification inbox and email delivery
+    pages/                      - App page metadata loading
     patches/                    - Explicit patch runtime
     permissions/                - Permission evaluation logic
-    project/                    - Project root discovery
+    project/                    - Project root discovery and metadata loading
     projectgen/                 - Project scaffold generator
+    queues/                     - Queue config loading
+    recordfilter/               - Record filter parsing
     recordquery/                - Record query helpers
+    recordsecret/               - Record field encryption and key ring
     reserved/                   - Reserved name registry
+    routes/                     - Route registry and validation
+    runnergen/                  - Project runner wiring generator
+    schedules/                  - Schedule metadata loading
     secrets/                    - Encrypted secrets runtime
     server/                     - HTTP server runtime
+    shape/                      - Filesystem path and filename conventions
     studio/                     - Studio asset handling
+    studiostate/                - Private Studio state storage
     upgrade/                    - Project upgrade runtime
     yamlmeta/                   - YAML metadata helpers
   apps/                         - First-party dygo apps
@@ -126,7 +123,7 @@ dygo/                           - Framework repository root
     dygo/                       - App hook, Job, and logging API
   config/                       - Framework runtime config files
     secrets/                    - Encrypted dev secrets
-    github.yml                  - GitHub repository and project board metadata
+    github.yml                  - GitHub repository and issue-tracking metadata
   db/                           - Framework DB artifacts
     schema.sql                  - Framework schema snapshot
   docs/                         - Framework documentation

@@ -142,7 +142,6 @@ V1 app hooks are synchronous and transactional.
 
 Coming soon:
 
-- actor-scoped and permission-scoped SDK access modes
 - dynamic loading
 - hook priority
 - framework hook override

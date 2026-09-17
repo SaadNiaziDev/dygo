@@ -59,7 +59,7 @@ The app commands read app manifests from `apps/` and `.dygo/apps/`. Entity valid
 
 These commands can be run from nested directories. The CLI walks upward to find the dygo project root before reading app manifests.
 
-Entity-owned files such as `<entity>.entity.yml`, `fixtures.yml`, `hooks.go`, and `views.yml` live inside the Entity bundle under `entities/<entity>/`. Access policy lives under `access/<entity>.access.yml`. Compiled hook registration is documented in [Record Hooks](record-hooks.md).
+Entity-owned files such as `<entity>.entity.yml`, `fixtures.yml`, and `hooks.go` live inside the Entity bundle under `entities/<entity>/`. `views.yml` is reserved for future view metadata and is not loaded yet. Access policy lives under `access/<entity>.access.yml`. Compiled hook registration is documented in [Record Hooks](record-hooks.md).
 
 ## Current Boundaries
 

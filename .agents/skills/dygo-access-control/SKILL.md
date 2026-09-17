@@ -27,4 +27,4 @@ Read `docs/access.md`, `docs/auth.md`, and the current permission actions in `in
 
 ## Check
 
-Use `dygo access validate`, `dygo access show <app>/<entity>`, and `dygo access apply --dry-run`. Test the actual permission boundary when the change can expose or mutate business data.
+Use `dygo access validate` and `dygo access show <app>/<entity>`. Access metadata is applied only through `dygo db migrate`. Test the actual permission boundary when the change can expose or mutate business data.

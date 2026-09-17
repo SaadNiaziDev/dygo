@@ -2,7 +2,7 @@
 
 Fixtures are app-owned seed Records.
 
-They are for reference data, demo/setup data, and other ordinary runtime defaults that should be versioned with an App. App access roles and grants move to [Access](access.md); they should not remain generic fixtures once the access metadata loader exists.
+They are for reference data, demo/setup data, and other ordinary runtime defaults that should be versioned with an App. App access roles and grants live in [Access](access.md), not in generic fixtures.
 
 Apply Fixtures with the rest of the database lifecycle:
 

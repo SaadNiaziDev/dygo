@@ -7,6 +7,10 @@
   "additionalProperties": false,
   "required": ["database"],
   "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
     "server": {
       "type": "object",
       "additionalProperties": false,
@@ -43,6 +47,55 @@
               "type": "string",
               "pattern": "^[A-Z][A-Z0-9_]*$",
               "description": "Encrypted secret name that resolves to the database URL."
+            }
+          }
+        }
+      }
+    },
+    "email": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "smtp": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "username": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["secret"],
+              "properties": {
+                "secret": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]*$",
+                  "description": "Encrypted secret name for the SMTP username."
+                }
+              }
+            },
+            "password": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["secret"],
+              "properties": {
+                "secret": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]*$",
+                  "description": "Encrypted secret name for the SMTP password."
+                }
+              }
             }
           }
         }

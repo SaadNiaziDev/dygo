@@ -10,6 +10,7 @@ Use this index to find the right document for the task. The docs are kept in the
 - [CLI](cli.md) is the command reference for project, database, metadata, server, Job, worker, and secret commands.
 - [Doctrine](doctrine.md) explains the framework principles behind dygo's defaults.
 - [Nomenclature](nomenclature.md) defines terms used across code, docs, CLI output, metadata, and Studio.
+- [Stack](stack.md) lists the technologies dygo is built with.
 
 ## Build Apps
 
@@ -17,7 +18,7 @@ Use this index to find the right document for the task. The docs are kept in the
 - [App Manifest](app-manifest.md) defines `app.yml`.
 - [Entity Metadata](entity-metadata.md) defines Entity YAML, route slugs, Record naming, storage naming, field types, indexes, and constraints.
 - [Page Metadata](pages.md) defines app-owned Page YAML, route paths, renderers, and the Page bundle convention.
-- [Access](access.md) records the proposed app role and Entity access authoring model.
+- [Access](access.md) explains the app role and Entity access authoring model.
 - [Workflow](workflow.md) records the proposed model for lifecycle actions, status transitions, approvals, and document-style operations.
 - [Metadata Authoring](metadata-authoring.md) explains JSON Schemas and editor support for dygo YAML files.
 - [Fixtures](fixtures.md) explains app-owned seed Records applied by `dygo db migrate`.
@@ -44,15 +45,14 @@ Use this index to find the right document for the task. The docs are kept in the
 ## Studio
 
 - [Studio](studio.md) explains the first-party global UI app, route model, and design responsibilities.
-- [Dialogs](dialogs.md) records the proposed shared Studio dialog API.
-- [Toasts](toasts.md) records the proposed shared Studio toast API.
+- [Dialogs](dialogs.md) explains the shared Studio dialog API.
+- [Toasts](toasts.md) explains the shared Studio toast API.
 
 ## Maintainers
 
 - [Release Process](releasing.md) explains local release checks, tag creation, GitHub release publication, artifacts, and installers.
-- [Directory Shape](dir.md) documents the generated project layout, deployed runtime layout, and framework repository layout.
+- [Directory Shape](dir.md) documents the generated project layout and framework repository layout.
 - [Maintainer Notes](notes.md) records repo-maintenance notes that are useful to keep versioned but are not framework reference material.
-- [Roadmap](todo.md) tracks local issue status for the dygo repository.
 - [Project README](../README.md) gives a short overview and quick start.
 - [Contributing](../CONTRIBUTING.md) explains the current paused contribution status.
 - [Security Policy](../SECURITY.md) explains private vulnerability reporting and safe research guidelines.

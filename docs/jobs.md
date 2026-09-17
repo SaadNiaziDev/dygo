@@ -297,7 +297,6 @@ pkg/dygo/runtime              - project runner options for compiled Jobs
 ## Coming Soon
 
 - Dedicated Studio Job and Schedule operation screens.
-- Job-backed importer foundation.
 - Retention policy for old succeeded and failed executions.
 - Optional stale-work metadata if handler-level freshness checks become repetitive.
 - Queue-level rate limits or dead-letter policy.

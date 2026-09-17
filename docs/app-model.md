@@ -51,6 +51,8 @@ It owns:
 - frontend stores
 - private user preferences and saved Record list filters
 
+Spaces, saved views, and audit log UI are not implemented yet.
+
 The framework repo includes the initial Studio app manifest at `apps/studio/app.yml`.
 
 ## Business Apps
@@ -83,7 +85,7 @@ dygo-crm/
     index.md
 ```
 
-Business apps should not need default `views`, `spaces`, or `reports` folders at the start. Add those only when the app needs custom behavior beyond global Studio rendering.
+`dygo generate app` creates the standard app folders, including empty `pages/` and `reports/` directories for later use. Business apps add custom behavior there only when global Studio rendering is not enough.
 
 Each app is described by an `app.yml` manifest. See [App Manifest](app-manifest.md) for the v1 schema.
 
@@ -121,4 +123,4 @@ Studio is the first-party UI App.
 
 Business Apps define Entities, Pages, Permissions, Hooks, Fixtures, and Patches.
 
-Studio initially groups metadata by App and renders those Apps globally through Spaces, Records, Forms, Lists, and Saved Views.
+Studio initially groups metadata by App and renders those Apps globally through metadata-driven Record lists, Record forms, and Pages.

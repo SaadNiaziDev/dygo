@@ -18,7 +18,7 @@ Users are usually in a task-heavy work context. They need to scan, compare, edit
 
 Studio is dygo's first-party operational and builder UI. It turns installed App metadata into usable product surfaces while keeping a consistent Shell, navigation model, permission behavior, and design language.
 
-Studio should make the standard path feel complete before a business app writes custom UI. A builder should be able to define an App, sync metadata, apply fixtures, and see the result in Studio through delivered Page Types such as Space, List, Form, Report, Dashboard, Settings, and Activity.
+Studio should make the standard path feel complete before a business app writes custom UI. A builder should be able to define an App, sync metadata, apply fixtures, and see the result in Studio through metadata-driven Entity pages, Record lists, Record forms, and custom Vue Pages.
 
 Custom Pages are supported as an escape hatch, but they should still run inside the Studio Shell and reuse Studio design components.
 

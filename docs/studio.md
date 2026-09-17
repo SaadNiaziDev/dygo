@@ -41,6 +41,8 @@ Studio owns:
 - metadata API client
 - frontend stores
 
+Spaces, saved views, and audit log UI are not implemented yet.
+
 ## Route Model
 
 Studio is root-mounted by default. Global Studio pages live at root paths; metadata-backed Records also live at root paths through globally unique route slugs.
@@ -54,6 +56,8 @@ Current routes:
 /:entity/new
 /:entity/:name
 ```
+
+App Pages add their own root paths from Page metadata. See [Page Metadata](pages.md).
 
 `/login` is public. The other routes require a valid Studio session. `/` resolves through the boot default `home` route when configured.
 

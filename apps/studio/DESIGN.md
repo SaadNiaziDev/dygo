@@ -12,11 +12,11 @@ Light-first.
 
 Scene: a builder or operator is working on a laptop or desktop during the workday, moving between metadata, Records, permissions, and Activity while making careful business changes.
 
-Dark mode can come later as a full token mode, not as the default visual identity.
+Light is the default. Dark mode is a full token mode selected through the theme preference, not the default visual identity.
 
 ## Color
 
-Use OKLCH tokens. Avoid raw `#000` and `#fff`; neutrals should be lightly tinted.
+Use OKLCH tokens. Avoid raw `#000` and `#fff`. Neutral text tokens carry a light blue tint; neutral surfaces stay neutral.
 
 Color strategy: restrained.
 
@@ -145,8 +145,9 @@ Standard Page Types should be implemented as generic renderers, not one-off file
 Use atomic design with dygo-owned component APIs:
 
 ```txt
+styles/
+  base.css         design tokens
 design/
-  tokens/
   primitives/
   atoms/
   molecules/
@@ -156,50 +157,61 @@ design/
 Primitives wrap behavior libraries:
 
 ```txt
+Combobox (+ ComboboxItem)
 Dialog
-DropdownMenu
-Select
-Tabs
-Tooltip
+DropdownMenu (+ DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuSeparator, DropdownMenuSub)
 Popover
-CommandMenu
+RadioGroup
+Select
+Switch
+Tree
 ```
+
+Only `design/` imports Reka UI. Feature, shell, renderer, and page code imports these components from `@dygo/ui` instead. When a surface needs an interaction the primitives do not cover, extend the primitive layer rather than importing Reka in feature code.
+
+Panel classes passed to a primitive (`panel-class`, `overlay-class`, `input-class`) render outside the consumer's scoped CSS, so consumers style them with `:global(...)` or a non-scoped style block.
 
 Atoms:
 
 ```txt
+Avatar
+Badge
 Button
+Checkbox
+Divider
 IconButton
 Input
 Label
-Textarea
-Checkbox
-Badge
+LogoMark
 Spinner
+Textarea
 ```
 
 Molecules:
 
 ```txt
-Field
-FormSection
-Toolbar
-EmptyState
+CheckboxField
 ErrorState
+Field
+FieldRow
+FormSection
+PasswordField
+RadioGroupField
 SearchBox
-DataCell
+SegmentedControl
+SelectField
+SwitchField
+TextField
+TextareaField
 ```
 
 Organisms:
 
 ```txt
-Shell
-Sidebar
-TopBar
-EntityTable
-RecordForm
-ActivityTimeline
+DataTable
 ```
+
+The Shell, Sidebar, TopBar, Toolbar, and form chrome live under `ui/src/shell/`. Record renderers live under `ui/src/renderers/`.
 
 Feature code should use dygo design components. It should not import Reka directly unless a new design primitive is being built.
 
@@ -249,17 +261,3 @@ Do not use:
 - side-stripe accent borders
 - custom controls where standard accessible primitives exist
 - page layouts that hide the Shell or break route orientation without a deliberate full-screen mode
-
-## First Implementation Target
-
-The first Studio UI task should build:
-
-- Vue + Vite app scaffold under `apps/studio/ui`
-- Studio Shell skeleton
-- design tokens
-- first atoms and molecules
-- login page
-- authenticated start page
-- clear forbidden state
-
-The visual result should be minimal but structurally correct.

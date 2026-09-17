@@ -6,6 +6,8 @@ This document describes the dygo CLI command surface. Commands that are intentio
 
 - `dygo` - Shows the root help for the metadata-driven dygo platform CLI.
 - `dygo new <name>` - Creates a new dygo project skeleton.
+- `dygo new <name> --module <path>` - Sets the Go module path for the generated project.
+- `dygo new <name> --skip-tidy` - Skips `go mod tidy` after generating the project.
 - `dygo upgrade` - Upgrades the current project files, assets, and dependencies when the project dygo version differs from the installed dygo binary.
 - `dygo upgrade --check` - Checks whether the current project needs an upgrade without planning or writing changes.
 - `dygo upgrade --to <version>` - Plans or applies a project upgrade to the version embedded in the running dygo binary.
@@ -84,11 +86,14 @@ This document describes the dygo CLI command surface. Commands that are intentio
 
 - `dygo generate` - Groups source scaffolding commands.
 - `dygo generate app <app>` - Generates a new app skeleton.
+- `dygo generate app <app> --no-access` - Skips access metadata skeleton creation.
 - `dygo generate entity <app>/<entity>` - Generates the standard Entity bundle.
+- `dygo generate entity <app>/<entity> --no-access` - Skips the Entity access file.
 - `dygo generate collection <app>/<collection>` - Generates reusable collection row Entity metadata.
 - `dygo generate hook <app>/<entity>` - Adds Entity hook scaffolding and project runner wiring to an existing Entity.
 - `dygo generate job <app>/<job>` - Adds Job metadata, a starter `run.go`, and project runner wiring.
 - `dygo generate page <app>/<page>` - Adds a Page bundle: YAML metadata, a Vue starter, and Page access.
+- `dygo generate page <app>/<page> --no-access` - Skips Page access metadata skeleton creation.
 - `dygo generate fixture <app>/<entity>` - Adds a fixture skeleton to an existing Entity.
 - `dygo generate test <app>/<entity>` - Adds Go test boilerplate for an existing Entity.
 
@@ -147,7 +152,7 @@ Studio operators can cancel queued Job Executions and retry failed ones from Job
 ## Routes
 
 - `dygo route` - Groups route registry inspection and validation commands.
-- `dygo route list` - Lists routeable Entities, effective slugs, owners, and reserved root slugs.
+- `dygo route list` - Lists routeable Entities, Pages, effective slugs, owners, and reserved root slugs.
 - `dygo route validate` - Validates route slug conflicts, reserved root slugs, invalid slug syntax, and non-routeable collection usage.
 - `dygo route resolve <path>` - Explains which Studio, API, or Entity route would handle a path.
 - `dygo route resolve <method> <path>` - Explains which route, action, and permission a request would use.
@@ -160,6 +165,7 @@ Studio operators can cancel queued Job Executions and retry failed ones from Job
 - `dygo access list` - Lists discovered Entity access files grouped by contributor app.
 - `dygo access list <app>` - Lists Entity access files contributed by one app.
 - `dygo access show <app>/<entity>` - Prints resolved access metadata for one Entity.
+- `dygo access explain <app>/<entity> --user <email> --action <action> [--record <id>]` - Reports roles, matching policies, row access, and denied fields without SQL.
 - `dygo access roles` - Lists app-owned roles grouped by app.
 - `dygo access roles <app>` - Lists app-owned roles for one app.
 - `dygo access export --in <app>` - Prints a role export plan, prompts interactively, then writes missing database roles into the selected app's `_roles.yml`.

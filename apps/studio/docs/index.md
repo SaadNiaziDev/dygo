@@ -10,7 +10,7 @@ The Studio app now includes design context and the first UI scaffold:
 - `DESIGN.md` defines Studio's visual direction, Shell model, Page vocabulary, Page Types, and Dygo UI component architecture.
 - `ui/` contains the Vue/Vite Studio frontend, router, route guards, and the first Dygo UI components.
 
-Feature code should use Dygo UI components from `ui/src/design/`. Reka UI is used behind Dygo primitives where accessible behavior is complex; feature code should not import Reka directly.
+Feature code should use Dygo UI components from `ui/src/design/`. Only the design system imports Reka UI; feature, shell, renderer, and page code imports the styled primitives from `@dygo/ui` instead of Reka directly.
 
 ## Development
 
@@ -33,7 +33,7 @@ Studio is root-mounted by default. Global pages and record pages both live at ro
 /
 /:entity
 /:entity/new
-/:entity/:id
+/:entity/:recordName
 ```
 
 Dynamic Entity route slugs are authenticated. `/login` is public and redirects authenticated users back to `/`, which resolves through the boot default `home` route when configured. Activity appears inside the Record page.

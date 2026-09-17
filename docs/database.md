@@ -227,4 +227,4 @@ Manual schema dump commands are intentionally not public. `dygo doctor` reports 
 
 ## Boundaries
 
-The schema sync foundation creates tables and persists metadata. The generic Record API, fixture runner, session auth, and Activity writer can read and write DB-backed fields through that metadata. Activity is append-only Record history for product timelines; compliance-grade audit logging, app lifecycle patches, fixture support for collection rows, and destructive metadata transitions are still separate layers.
+The schema sync foundation creates tables and persists metadata. The generic Record API, fixture runner, session auth, and Activity writer can read and write DB-backed fields through that metadata. Activity is append-only Record history for product timelines; compliance-grade audit logging and fixture support for collection rows remain separate layers.

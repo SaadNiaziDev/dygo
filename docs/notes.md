@@ -33,7 +33,6 @@ These are intentionally not part of the current public CLI contract:
 - global `--json`
 - smart shell completions
 - report runtime
-- custom page runtime
 - Studio schedule UI
 - production secret providers such as KMS or Vault
 
