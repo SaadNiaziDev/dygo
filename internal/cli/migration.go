@@ -10,7 +10,6 @@ import (
 	jobruntime "github.com/hapyco/dygo/internal/jobs/runtime"
 	"github.com/hapyco/dygo/internal/migration"
 	"github.com/hapyco/dygo/internal/project"
-	"github.com/spf13/cobra"
 )
 
 type projectMigrator struct {
@@ -48,15 +47,4 @@ func migrationCodeValidator(hooks *db.RecordHookRegistry, jobs *jobruntime.Regis
 		}
 		return nil
 	}
-}
-
-// Keep the former spelling discoverable without allowing a second database writer.
-func retiredApplyCommand(resource string) *cobra.Command {
-	cmd := &cobra.Command{Use: "apply", Short: "Use dygo db migrate to apply database changes", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
-		return fmt.Errorf("dygo %s apply has moved into dygo db migrate; run dygo db migrate --env %s", resource, cmd.Flag("env").Value.String())
-	}}
-	cmd.Flags().String("env", "development", "Environment for the replacement database command")
-	cmd.Flags().Bool("yes", false, "Use --yes with dygo db migrate")
-	cmd.Flags().Bool("dry-run", false, "Use --dry-run with dygo db migrate")
-	return cmd
 }

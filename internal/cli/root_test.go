@@ -129,12 +129,10 @@ func TestCommandSurfaceRegistersTargetCommands(t *testing.T) {
 		{"entity", "show"},
 		{"entity", "graph"},
 		{"fixture"},
-		{"fixture", "apply"},
 		{"fixture", "validate"},
 		{"fixture", "export"},
 		{"access"},
 		{"access", "validate"},
-		{"access", "apply"},
 		{"access", "list"},
 		{"access", "show"},
 		{"access", "roles"},
@@ -374,22 +372,6 @@ func TestSetupCommandReturnsRunnerError(t *testing.T) {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("Run(setup) error = %q, want substring %q", err.Error(), want)
 		}
-	}
-}
-
-func TestFixtureApplyDirectsDatabaseWritesToMigrate(t *testing.T) {
-	root := t.TempDir()
-	writeCLIProjectRoot(t, root)
-	t.Chdir(root)
-
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	err := runWithServicesAndSetupAndFixtures(context.Background(), []string{"fixture", "apply", "--env", "staging"}, strings.NewReader(""), &stdout, &stderr, noopServeRunner, noopDatabaseRunner(), &fakeSchemaSyncRunner{}, &fakeAdminSetupRunner{}, &fakeFixtureRunner{})
-	if err == nil {
-		t.Fatal("Run(fixture apply) error = nil, want migration guidance")
-	}
-	if !strings.Contains(err.Error(), "dygo fixture apply has moved into dygo db migrate; run dygo db migrate --env staging") {
-		t.Fatalf("Run(fixture apply) error = %q, want migration guidance", err.Error())
 	}
 }
 
@@ -1656,7 +1638,7 @@ func TestDoctorCommandReportsMissingFirstRunSetup(t *testing.T) {
 	output := stdout.String()
 	for _, want := range []string{
 		"PASS runtime database: development database reachable",
-		"FAIL core access: missing Core roles and permissions; run dygo access apply",
+		"FAIL core access: missing Core roles and permissions; run dygo db migrate",
 		"FAIL administrator account: missing Administrator account; run dygo setup",
 		"dygo doctor found 2 problems",
 	} {

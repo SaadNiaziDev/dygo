@@ -47,7 +47,7 @@ func CheckCoreFixtures(ctx context.Context, queryer Queryer) CheckResult {
 		missing = append(missing, "permissions")
 	}
 	if len(missing) > 0 {
-		return CheckResult{Name: "core access", Detail: fmt.Sprintf("missing Core %s; run dygo access apply", strings.Join(missing, " and "))}
+		return CheckResult{Name: "core access", Detail: fmt.Sprintf("missing Core %s; run dygo db migrate", strings.Join(missing, " and "))}
 	}
 	return CheckResult{Name: "core access", Ready: true, Detail: fmt.Sprintf("%d roles and %d permissions ready", roleCount, permissionCount)}
 }

@@ -15,7 +15,7 @@ import (
 const (
 	// ActivitySourceAPI marks Record mutations performed through HTTP APIs.
 	ActivitySourceAPI = "api"
-	// ActivitySourceFixtures marks Record mutations performed by fixture apply.
+	// ActivitySourceFixtures marks Record mutations performed by fixture application.
 	ActivitySourceFixtures = "fixtures"
 )
 

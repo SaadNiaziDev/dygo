@@ -587,7 +587,7 @@ func yamlRecordNode(meta db.MetadataEntityMeta, record db.Record) *yaml.Node {
 			continue
 		}
 		if field.Type == "link" {
-			// TODO(fixtures): support exporting null link values once fixture apply can write link nulls.
+			// TODO(fixtures): support exporting null link values once fixture application can write link nulls.
 			if value == nil {
 				continue
 			}

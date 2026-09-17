@@ -85,7 +85,7 @@ type Grant struct {
 	Source    PolicyItem
 }
 
-// Result reports access apply writes.
+// Result reports access application writes.
 type Result struct {
 	Roles       int
 	Permissions int

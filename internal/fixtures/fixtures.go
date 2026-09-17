@@ -98,7 +98,7 @@ type Value struct {
 	Line int
 }
 
-// Store is the metadata and Record behavior needed by fixture apply.
+// Store is the metadata and Record behavior needed by fixture application.
 type Store interface {
 	ListEntities(context.Context) ([]db.MetadataEntity, error)
 	GetEntityMetaByIdentity(context.Context, string, string) (db.MetadataEntityMeta, error)

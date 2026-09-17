@@ -14,7 +14,6 @@ import (
 func newFixtureCommand(ctx context.Context, stdin io.Reader, stdout, stderr io.Writer, runner fixtureRunner) *cobra.Command {
 	cmd := newCommandGroup("fixture", "Manage app-owned fixture records")
 
-	cmd.AddCommand(newFixtureApplyCommand(ctx, stdin, stdout, stderr, runner))
 	cmd.AddCommand(newFixtureExportCommand(ctx, stdin, stdout, stderr, runner))
 	cmd.AddCommand(newFixtureValidateCommand(ctx, stdout, runner))
 
@@ -79,10 +78,6 @@ func newFixtureExportCommand(ctx context.Context, stdin io.Reader, stdout, stder
 	cmd.Flags().BoolVar(&dryRun, "dry-run", dryRun, "Print the fixture export plan without writing files")
 
 	return cmd
-}
-
-func newFixtureApplyCommand(ctx context.Context, stdin io.Reader, stdout, stderr io.Writer, runner fixtureRunner) *cobra.Command {
-	return retiredApplyCommand("fixture")
 }
 
 func newFixtureValidateCommand(ctx context.Context, stdout io.Writer, runner fixtureRunner) *cobra.Command {

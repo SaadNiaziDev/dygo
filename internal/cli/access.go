@@ -17,7 +17,6 @@ func newAccessCommand(ctx context.Context, stdin io.Reader, stdout, stderr io.Wr
 	cmd := newCommandGroup("access", "Manage app access metadata")
 
 	cmd.AddCommand(newAccessValidateCommand(ctx, stdout, runner))
-	cmd.AddCommand(newAccessApplyCommand(ctx, stdin, stdout, stderr, runner))
 	cmd.AddCommand(newAccessListCommand(ctx, stdout, runner))
 	cmd.AddCommand(newAccessShowCommand(ctx, stdout, runner))
 	cmd.AddCommand(newAccessRolesCommand(ctx, stdout, runner))
@@ -87,10 +86,6 @@ func newAccessValidateCommand(ctx context.Context, stdout io.Writer, runner acce
 			return nil
 		},
 	}
-}
-
-func newAccessApplyCommand(ctx context.Context, stdin io.Reader, stdout, stderr io.Writer, runner accessRunner) *cobra.Command {
-	return retiredApplyCommand("access")
 }
 
 func newAccessListCommand(ctx context.Context, stdout io.Writer, runner accessRunner) *cobra.Command {
