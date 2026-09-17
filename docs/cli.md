@@ -47,9 +47,9 @@ This document describes the dygo CLI command surface. Commands that are intentio
 - `dygo app` - Groups dygo app commands.
 - `dygo app list` - Lists discovered apps, versions, labels, and install locations.
 - `dygo app validate` - Validates app manifests, app paths, dependencies, and reserved app metadata.
-- `dygo app install <app>` - Validates a local App and its dependencies, then updates generated Hook and Job runner wiring. App source must already exist under `apps/` or `.dygo/apps/`; run `dygo db migrate` separately to change a database.
-- `dygo app install <app> --dry-run` - Prints the local runner change without writing.
-- `dygo app install <app> --yes` - Applies the local runner change without prompting.
+- `dygo app install <repository-url>` - Clones an App repository, validates it with the current project, copies it to `apps/<name>` without Git metadata, and updates generated Hook and Job runner wiring. The repository root must contain `app.yml`. Run `dygo db migrate` separately to change a database.
+- `dygo app install <repository-url> --dry-run` - Clones and validates the App without writing project files.
+- `dygo app install <repository-url> --yes` - Installs the App and updates runner wiring without prompting.
 
 ## Entities
 

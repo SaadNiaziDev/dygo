@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func TestAppInstallPreparesDependencyClosureAndRunner(t *testing.T) {
+func TestAppInstallClonesValidatesAndInstallsRepository(t *testing.T) {
 	root := t.TempDir()
 	writeCLIProjectRoot(t, root)
 	writeCLIGoModule(t, root, "example.com/acme")
@@ -20,55 +21,157 @@ label: CRM
 version: 0.1.0
 dependencies: [core]
 `)
-	writeCLIAppWithBody(t, filepath.Join(root, "apps", "sales"), `
+	repository := writeGitAppRepository(t, `
 name: sales
 label: Sales
 version: 0.1.0
 dependencies: [crm]
 `)
+	if err := os.WriteFile(filepath.Join(repository, "README.md"), []byte("sales\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	commitGitAppRepository(t, repository)
 	t.Chdir(root)
 
 	var stdout bytes.Buffer
-	if err := Run(context.Background(), []string{"app", "install", "sales", "--yes"}, strings.NewReader(""), &stdout, &bytes.Buffer{}); err != nil {
+	if err := Run(context.Background(), []string{"app", "install", repository, "--yes"}, strings.NewReader(""), &stdout, &bytes.Buffer{}); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"prepare order: core -> crm -> sales", "Next: build the project runner, then run dygo db migrate."} {
+	for _, want := range []string{
+		"app: sales 0.1.0",
+		"destination: apps/sales (create)",
+		"prepare order: core -> crm -> sales",
+		"App installed: sales 0.1.0",
+		"Next: build the project runner, then run dygo db migrate.",
+	} {
 		if !strings.Contains(stdout.String(), want) {
 			t.Fatalf("stdout = %q, want %q", stdout.String(), want)
 		}
 	}
-	if _, err := os.Stat(filepath.Join(root, "cmd", "dygo", "main.go")); err != nil {
-		t.Fatalf("runner was not written: %v", err)
+	for _, path := range []string{
+		filepath.Join(root, "apps", "sales", "app.yml"),
+		filepath.Join(root, "apps", "sales", "README.md"),
+		filepath.Join(root, "cmd", "dygo", "main.go"),
+	} {
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("installed file %s: %v", path, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, "apps", "sales", ".git")); !os.IsNotExist(err) {
+		t.Fatalf("installed Git metadata stat = %v, want missing", err)
 	}
 }
 
-func TestAppInstallDryRunDoesNotWrite(t *testing.T) {
+func TestAppInstallDryRunLeavesProjectUnchanged(t *testing.T) {
 	root := t.TempDir()
 	writeCLIProjectRoot(t, root)
 	writeCLIGoModule(t, root, "example.com/acme")
-	writeCLIApp(t, filepath.Join(root, "apps", "sales"), "sales")
+	repository := writeGitAppRepository(t, "name: sales\nlabel: Sales\nversion: 0.1.0\n")
+	commitGitAppRepository(t, repository)
 	t.Chdir(root)
 
 	var stdout bytes.Buffer
-	if err := Run(context.Background(), []string{"app", "install", "sales", "--dry-run"}, strings.NewReader(""), &stdout, &bytes.Buffer{}); err != nil {
+	if err := Run(context.Background(), []string{"app", "install", repository, "--dry-run"}, strings.NewReader(""), &stdout, &bytes.Buffer{}); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(stdout.String(), "dry-run: no files or database changes") {
+	if !strings.Contains(stdout.String(), "dry-run: no project files or database changes") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
-	if _, err := os.Stat(filepath.Join(root, "cmd", "dygo", "main.go")); !os.IsNotExist(err) {
-		t.Fatalf("dry-run runner stat = %v, want missing", err)
+	for _, path := range []string{filepath.Join(root, "apps", "sales"), filepath.Join(root, "cmd", "dygo", "main.go")} {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatalf("dry-run path %s stat = %v, want missing", path, err)
+		}
 	}
 }
 
-func TestAppInstallRejectsUnknownApp(t *testing.T) {
+func TestAppInstallRejectsInvalidRepository(t *testing.T) {
 	root := t.TempDir()
 	writeCLIProjectRoot(t, root)
 	writeCLIGoModule(t, root, "example.com/acme")
+	repository := writeGitAppRepository(t, "")
+	if err := os.WriteFile(filepath.Join(repository, "README.md"), []byte("not an App\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	commitGitAppRepository(t, repository)
 	t.Chdir(root)
 
-	err := Run(context.Background(), []string{"app", "install", "missing", "--yes"}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
-	if err == nil || !strings.Contains(err.Error(), `app "missing" was not found`) {
-		t.Fatalf("error = %v", err)
+	err := Run(context.Background(), []string{"app", "install", repository, "--yes"}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
+	if err == nil || !strings.Contains(err.Error(), "validate cloned App") {
+		t.Fatalf("error = %v, want cloned App validation error", err)
+	}
+}
+
+func TestAppInstallRejectsMissingDependencyWithoutWriting(t *testing.T) {
+	root := t.TempDir()
+	writeCLIProjectRoot(t, root)
+	writeCLIGoModule(t, root, "example.com/acme")
+	repository := writeGitAppRepository(t, `
+name: sales
+label: Sales
+version: 0.1.0
+dependencies: [crm]
+`)
+	commitGitAppRepository(t, repository)
+	t.Chdir(root)
+
+	err := Run(context.Background(), []string{"app", "install", repository, "--yes"}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
+	if err == nil || !strings.Contains(err.Error(), `depends on unknown app "crm"`) {
+		t.Fatalf("error = %v, want missing dependency", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(root, "apps", "sales")); !os.IsNotExist(statErr) {
+		t.Fatalf("App destination stat = %v, want missing", statErr)
+	}
+}
+
+func TestAppInstallRemovesSourceWhenProjectValidationFails(t *testing.T) {
+	root := t.TempDir()
+	writeCLIProjectRoot(t, root)
+	writeCLIGoModule(t, root, "example.com/acme")
+	repository := writeGitAppRepository(t, "name: sales\nlabel: Sales\nversion: 0.1.0\n")
+	entityDir := filepath.Join(repository, "entities", "lead")
+	if err := os.MkdirAll(entityDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(entityDir, "lead.entity.yml"), []byte("name: [\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	commitGitAppRepository(t, repository)
+	t.Chdir(root)
+
+	err := Run(context.Background(), []string{"app", "install", repository, "--yes"}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
+	if err == nil || !strings.Contains(err.Error(), "prepare project runner") {
+		t.Fatalf("error = %v, want project validation error", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(root, "apps", "sales")); !os.IsNotExist(statErr) {
+		t.Fatalf("App destination stat = %v, want rollback", statErr)
+	}
+	if _, statErr := os.Stat(filepath.Join(root, "cmd", "dygo", "main.go")); !os.IsNotExist(statErr) {
+		t.Fatalf("runner stat = %v, want missing", statErr)
+	}
+}
+
+func writeGitAppRepository(t *testing.T, manifest string) string {
+	t.Helper()
+	repository := t.TempDir()
+	if strings.TrimSpace(manifest) != "" {
+		if err := os.WriteFile(filepath.Join(repository, "app.yml"), []byte(strings.TrimSpace(manifest)+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	runGit(t, repository, "init", "--quiet")
+	return repository
+}
+
+func commitGitAppRepository(t *testing.T, repository string) {
+	t.Helper()
+	runGit(t, repository, "add", ".")
+	runGit(t, repository, "-c", "user.name=dygo", "-c", "user.email=dygo@example.invalid", "commit", "--quiet", "-m", "initial")
+}
+
+func runGit(t *testing.T, repository string, args ...string) {
+	t.Helper()
+	commandArgs := append([]string{"-C", repository}, args...)
+	if output, err := exec.Command("git", commandArgs...).CombinedOutput(); err != nil {
+		t.Fatalf("git %s: %v: %s", strings.Join(args, " "), err, output)
 	}
 }

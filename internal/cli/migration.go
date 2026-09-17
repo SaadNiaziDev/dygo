@@ -31,7 +31,7 @@ func migrationCodeValidator(hooks *db.RecordHookRegistry, jobs *jobruntime.Regis
 			path := filepath.Join(filepath.Dir(entity.Path), "hooks.go")
 			if _, err := os.Stat(path); err == nil {
 				if !hooks.HasEntity(entity.AppName, entity.Entity.Name) {
-					return fmt.Errorf("App %s Entity %s Hooks are not compiled; run dygo app install %s and build the project runner", entity.AppName, entity.Entity.Name, entity.AppName)
+					return fmt.Errorf("App %s Entity %s Hooks are not compiled; run dygo hook sync and build the project runner", entity.AppName, entity.Entity.Name)
 				}
 			} else if !os.IsNotExist(err) {
 				return err
@@ -43,7 +43,7 @@ func migrationCodeValidator(hooks *db.RecordHookRegistry, jobs *jobruntime.Regis
 				continue
 			}
 			if !jobs.HasJob(job.AppName, job.Job.Name) {
-				return fmt.Errorf("App %s Job %s is not compiled; run dygo app install %s and build the project runner", job.AppName, job.Job.Name, job.AppName)
+				return fmt.Errorf("App %s Job %s is not compiled; run dygo hook sync and build the project runner", job.AppName, job.Job.Name)
 			}
 		}
 		return nil
