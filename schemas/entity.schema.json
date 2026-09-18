@@ -65,7 +65,7 @@
           "fields": {
             "type": "array",
             "minItems": 1,
-            "items": { "$ref": "#/$defs/field" }
+            "items": { "$ref": "#/$defs/tabField" }
           }
         }
       }
@@ -111,9 +111,7 @@
         "link",
         "collection",
         "attachment",
-        "json",
-        "column",
-        "section"
+        "json"
       ]
     },
     "route": {
@@ -200,8 +198,7 @@
         },
         "type": { "$ref": "#/$defs/fieldType" },
         "description": {
-          "type": "string",
-          "description": "Optional helper text. Used by form section layout markers."
+          "type": "string"
         },
         "required": {
           "type": "boolean",
@@ -274,6 +271,33 @@
                 "maxProperties": 0
               }
             }
+          }
+        }
+      ]
+    },
+    "tabField": {
+      "oneOf": [
+        { "$ref": "#/$defs/field" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "label", "type"],
+          "properties": {
+            "name": { "$ref": "#/$defs/kebabName" },
+            "label": { "type": "string", "minLength": 1 },
+            "type": { "const": "column" },
+            "description": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "label", "type"],
+          "properties": {
+            "name": { "$ref": "#/$defs/kebabName" },
+            "label": { "type": "string", "minLength": 1 },
+            "type": { "const": "section" },
+            "description": { "type": "string" }
           }
         }
       ]
