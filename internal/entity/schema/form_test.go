@@ -101,3 +101,48 @@ func TestNormalizeFormLayoutRequiresTabName(t *testing.T) {
 		t.Fatalf("normalizeFormLayout() error = %v, want requires name", err)
 	}
 }
+
+func TestFormLayoutSourceLines(t *testing.T) {
+	source := `label: Contact
+name:
+  strategy: random
+tabs:
+  - tab: Details
+    name: details
+    fields:
+      - name: email
+        label: Email
+        type: email
+      - type: column
+      - type: section
+        label: Notes
+        description: Additional information
+      - name: notes
+        label: Notes
+        type: text
+`
+	entity, err := Decode([]byte(source), fieldtype.DefaultRegistry())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if entity.Fields[0].Line != 8 || entity.Fields[1].Line != 15 {
+		t.Fatalf("field source lines = %d, %d", entity.Fields[0].Line, entity.Fields[1].Line)
+	}
+}
+
+func TestDecodeRejectsInvalidFormLayouts(t *testing.T) {
+	const prefix = "label: Contact\nname: {strategy: random}\n"
+	for _, tc := range []struct{ name, body, want string }{
+		{"mixed empty fields", "fields: []\ntabs:\n  - tab: Details\n    name: details\n    fields: [{name: email, label: Email, type: email}]\n", "both fields and tabs"},
+		{"empty tab", "tabs: [{tab: Details, name: details, fields: []}]\n", "requires fields"},
+		{"marker storage setting", "tabs:\n  - tab: Details\n    name: details\n    fields:\n      - {type: column, required: true}\n      - {name: email, label: Email, type: email}\n", "line 7: layout markers"},
+		{"invalid nested field", "tabs:\n  - tab: Details\n    name: details\n    fields:\n      - {name: email, label: Email, type: missing}\n", "line 7:"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := Decode([]byte(prefix+tc.body), fieldtype.DefaultRegistry())
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want %q", err, tc.want)
+			}
+		})
+	}
+}

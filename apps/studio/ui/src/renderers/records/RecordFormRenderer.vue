@@ -3,12 +3,16 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
   PasswordField,
   SelectField,
   SwitchField,
   TextareaField,
   TextField,
-} from '@/design'
+} from '@dygo/ui'
 import {
   linkOptions,
   type MetadataEntityMeta,
@@ -21,6 +25,7 @@ import { useMetadataEntitiesQuery } from '@/features/metadata/metadata.query'
 import { iconForEntity } from '@/features/metadata/entity-icons'
 import { uploadRecordFile, type RecordData } from '@/features/records/records.api'
 import { isHiddenRecordFormField, recordFieldLabel } from '@/features/records/system-fields'
+import { resolveFormLayout } from './record-form-layout'
 import SecretEditor from './SecretEditor.vue'
 import type { SecretStatus } from '@/features/records/records.api'
 import RecordCollectionTable from './RecordCollectionTable.vue'
@@ -69,21 +74,9 @@ const fieldsByName = computed(() => {
   return map
 })
 
-const formLayout = computed<MetadataFormLayout>(() => {
-  const tabs = props.form?.tabs?.filter((tab) => tab.items?.length) ?? []
-  if (tabs.length > 0) {
-    return { tabs }
-  }
-  return {
-    tabs: [{
-      key: 'default',
-      label: props.entityLabel,
-      items: visibleFields.value.map((field) => ({ kind: 'field' as const, name: field.name })),
-    }],
-  }
-})
-
-const showTabStrip = computed(() => formLayout.value.tabs.length > 1)
+const layout = computed(() => resolveFormLayout(props.form, visibleFields.value, props.entityLabel))
+const formLayout = computed(() => layout.value.form)
+const showTabStrip = computed(() => layout.value.showTabStrip)
 
 watch(
   formLayout,
@@ -165,31 +158,27 @@ function isReadonlyField(field: MetadataField): boolean {
 </script>
 
 <template>
-  <form
+  <Tabs
+    v-model="activeTabKey"
+    as="form"
     class="record-form-renderer"
     :class="{ 'record-form-renderer--wide': showTabStrip || (activeTab && columnsFor(activeTab).length > 1) }"
     :aria-label="`${entityLabel} form`"
   >
-    <div
+    <TabsList
       v-if="showTabStrip"
       class="record-form-renderer__tabs"
-      role="tablist"
       :aria-label="`${entityLabel} sections`"
     >
-      <button
+      <TabsTrigger
         v-for="tab in formLayout.tabs"
         :key="tab.key"
-        type="button"
+        :value="tab.key"
         class="record-form-renderer__tab"
         :class="{
           'record-form-renderer__tab--active': tab.key === activeTabKey,
           'record-form-renderer__tab--error': tabHasErrors(tab),
         }"
-        role="tab"
-        :aria-selected="tab.key === activeTabKey ? 'true' : 'false'"
-        :id="`form-tab-${tab.key}`"
-        :aria-controls="`form-panel-${tab.key}`"
-        @click="activeTabKey = tab.key"
       >
         <component
           :is="iconForEntity(tab.icon)"
@@ -198,17 +187,17 @@ function isReadonlyField(field: MetadataField): boolean {
           aria-hidden="true"
         />
         <span>{{ tab.label }}</span>
-      </button>
-    </div>
+      </TabsTrigger>
+    </TabsList>
 
-    <div
+    <component
+      :is="showTabStrip ? TabsContent : 'div'"
       v-for="tab in formLayout.tabs"
+      :value="tab.key"
+      :force-mount="true"
       v-show="tab.key === activeTabKey"
-      :id="`form-panel-${tab.key}`"
       :key="tab.key"
       class="record-form-renderer__panel"
-      role="tabpanel"
-      :aria-labelledby="showTabStrip ? `form-tab-${tab.key}` : undefined"
     >
       <div
         class="record-form-renderer__columns"
@@ -374,8 +363,8 @@ function isReadonlyField(field: MetadataField): boolean {
           </template>
         </div>
       </div>
-    </div>
-  </form>
+    </component>
+  </Tabs>
 </template>
 
 <style scoped>

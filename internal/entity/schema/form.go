@@ -75,29 +75,35 @@ func normalizeFormLayout(entity *Entity) error {
 	for _, tab := range entity.Tabs {
 		label := strings.TrimSpace(tab.Label)
 		if label == "" {
-			return fmt.Errorf("tab label is required")
+			return fmt.Errorf("%s", withLine(tab.Line, "tab label is required"))
 		}
 		key := strings.TrimSpace(tab.Name)
 		if key == "" {
-			return fmt.Errorf("tab %q requires name", label)
+			return fmt.Errorf("%s", withLine(tab.Line, fmt.Sprintf("tab %q requires name", label)))
 		}
 		if !fieldtype.IsName(key) {
-			return fmt.Errorf("tab name %q must be kebab-case", key)
+			return fmt.Errorf("%s", withLine(tab.Line, fmt.Sprintf("tab name %q must be kebab-case", key)))
 		}
 		if _, exists := seenTabs[key]; exists {
-			return fmt.Errorf("duplicate tab name %q", key)
+			return fmt.Errorf("%s", withLine(tab.Line, fmt.Sprintf("duplicate tab name %q", key)))
 		}
 		seenTabs[key] = struct{}{}
 
+		if len(tab.Fields) == 0 {
+			return fmt.Errorf("%s", withLine(tab.Line, fmt.Sprintf("tab %q requires fields", label)))
+		}
 		items := make([]FormItem, 0, len(tab.Fields))
 		for _, field := range tab.Fields {
+			if isLayoutFieldType(field.Type) && (field.Required || field.Unique || field.Index || field.Default.Kind != 0 || field.Check != nil || field.Fetch != nil || fieldtype.NoOptions(field.Options) != nil) {
+				return fmt.Errorf("%s", withLine(field.Line, "layout markers cannot define storage field settings"))
+			}
 			switch strings.TrimSpace(field.Type) {
 			case layoutFieldTypeColumn:
 				items = append(items, FormItem{Kind: FormItemKindColumn})
 			case layoutFieldTypeSection:
 				sectionLabel := strings.TrimSpace(field.Label)
 				if sectionLabel == "" {
-					return fmt.Errorf("tab %q section requires label", label)
+					return fmt.Errorf("%s", withLine(field.Line, fmt.Sprintf("tab %q section requires label", label)))
 				}
 				items = append(items, FormItem{
 					Kind:        FormItemKindSection,
@@ -108,10 +114,10 @@ func normalizeFormLayout(entity *Entity) error {
 			default:
 				name := strings.TrimSpace(field.Name)
 				if name == "" {
-					return fmt.Errorf("tab %q field is missing name", label)
+					return fmt.Errorf("%s", withLine(field.Line, fmt.Sprintf("tab %q field is missing name", label)))
 				}
 				if _, exists := seenFields[name]; exists {
-					return fmt.Errorf("duplicate field %q across tabs", name)
+					return fmt.Errorf("%s", withLine(field.Line, fmt.Sprintf("duplicate field %q across tabs", name)))
 				}
 				seenFields[name] = struct{}{}
 				fields = append(fields, field)

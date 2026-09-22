@@ -76,7 +76,7 @@ func TestMetadataReaderListEntities(t *testing.T) {
 
 func TestMetadataReaderGetEntityMeta(t *testing.T) {
 	queryer := &fakeMetadataQueryer{
-		row: newFakeRow(int64(10), "core.user", "user", "user", "User", "User identity", "user", true, true, false, false, "", []byte(`{"strategy":"format","format":"{email}"}`), "core", "Core", nil, nil),
+		row: newFakeRow(int64(10), "core.user", "user", "user", "User", "User identity", "user", true, true, false, false, "", []byte(`{"strategy":"format","format":"{email}"}`), "core", "Core", nil, []byte(`{"tabs":[{"key":"identity","label":"Identity","icon":"user","items":[{"kind":"field","name":"email"},{"kind":"column"},{"kind":"section","label":"Settings","description":"Account settings"},{"kind":"field","name":"enabled"}]}]}`)),
 		rows: []pgx.Rows{
 			newFakeRows([][]any{
 				{int64(1), "email", "Email", "email", true, true, true, nil, nil, []byte(`{"from":"profile.email"}`), 1, []byte(`{"entity":"user"}`)},
@@ -98,6 +98,13 @@ func TestMetadataReaderGetEntityMeta(t *testing.T) {
 	}
 	if meta.Name != "core.user" || meta.Key != "user" || meta.RouteSlug() != "user" || meta.Icon != "user" || meta.App.Name != "core" || !meta.IsSingle || !meta.IsSystem {
 		t.Fatalf("GetEntityMeta() = %+v, want core/user", meta.MetadataEntity)
+	}
+	if meta.Form == nil || len(meta.Form.Tabs) != 1 {
+		t.Fatalf("form = %+v, want one explicit tab", meta.Form)
+	}
+	tab := meta.Form.Tabs[0]
+	if tab.Key != "identity" || tab.Label != "Identity" || tab.Icon != "user" || len(tab.Items) != 4 || tab.Items[0].Name != "email" || tab.Items[1].Kind != "column" || tab.Items[2].Kind != "section" || tab.Items[2].Description != "Account settings" || tab.Items[3].Name != "enabled" {
+		t.Fatalf("form tab = %+v, want ordered fields and layout markers", tab)
 	}
 	if len(meta.Fields) != 2 || meta.Fields[0].Name != "email" || string(meta.Fields[0].Options) != `{"entity":"user"}` {
 		t.Fatalf("GetEntityMeta() fields = %+v, want ordered fields", meta.Fields)
