@@ -87,6 +87,7 @@ type jobRecord struct {
 	Label       string
 	Description string
 	Queue       string
+	Cron        string
 	Timeout     string
 	Retry       []byte
 	Enabled     bool
@@ -354,20 +355,21 @@ func persistJobRecord(ctx context.Context, tx pgx.Tx, appID int64, job jobRecord
 	}
 	var id int64
 	err := tx.QueryRow(ctx, `
-INSERT INTO "job" (name, app_id, key, source, label, description, queue, timeout, retry, enabled, retired)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+INSERT INTO "job" (name, app_id, key, source, label, description, queue, cron, timeout, retry, enabled, retired)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 ON CONFLICT (app_id, key) DO UPDATE
 SET name = EXCLUDED.name,
 	source = EXCLUDED.source,
 	label = EXCLUDED.label,
 	description = EXCLUDED.description,
 	queue = EXCLUDED.queue,
+	cron = EXCLUDED.cron,
 	timeout = EXCLUDED.timeout,
 	retry = EXCLUDED.retry,
 	retired = false,
 	updated_at = now()
-WHERE "job"."source" = $12
-RETURNING id`, job.Name, appID, job.Key, source, job.Label, nullIfEmpty(job.Description), job.Queue, job.Timeout, job.Retry, job.Enabled, job.Retired, jobs.JobSourceFile).Scan(&id)
+WHERE "job"."source" = $13
+RETURNING id`, job.Name, appID, job.Key, source, job.Label, nullIfEmpty(job.Description), job.Queue, nullIfEmpty(job.Cron), job.Timeout, job.Retry, job.Enabled, job.Retired, jobs.JobSourceFile).Scan(&id)
 	if err != nil && err != pgx.ErrNoRows {
 		return 0, fmt.Errorf("persist job metadata %s/%s: %w", job.AppName, job.Key, err)
 	}
@@ -711,6 +713,7 @@ func buildMetadataRecords(metadata metadataCatalog) (metadataRecordSet, error) {
 			Label:       loaded.Job.Label,
 			Description: loaded.Job.Description,
 			Queue:       loaded.Job.EffectiveQueue(),
+			Cron:        loaded.Job.Cron,
 			Timeout:     loaded.Job.Timeout,
 			Retry:       retryJSON,
 			Enabled:     true,
