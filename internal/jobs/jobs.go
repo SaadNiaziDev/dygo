@@ -232,7 +232,9 @@ func (j Job) Validate() error {
 		problems = append(problems, fmt.Sprintf("queue %q must be kebab-case", j.Queue))
 	}
 	if cronExpr := strings.TrimSpace(j.Cron); cronExpr != "" {
-		if _, err := jobCronParser.Parse(cronExpr); err != nil {
+		if len(strings.Fields(cronExpr)) != 5 {
+			problems = append(problems, "cron must contain exactly 5 fields in UTC, without CRON_TZ or TZ")
+		} else if _, err := jobCronParser.Parse(cronExpr); err != nil {
 			problems = append(problems, fmt.Sprintf("cron %q is invalid: %v", j.Cron, err))
 		}
 	}
